@@ -41,7 +41,14 @@ const Signup: React.FC = () => {
   const onSubmit = async (data: SignupFormData) => {
     try {
       const { confirmPassword, ...registerData } = data;
-      await register(registerData);
+      // Ensure all required fields are present
+      const completeRegisterData = {
+        name: registerData.name,
+        email: registerData.email,
+        password: registerData.password,
+        organization_name: registerData.organization_name,
+      };
+      await register(completeRegisterData);
       navigate('/onboarding');
     } catch (error) {
       // Error handling is done in the AuthContext

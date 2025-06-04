@@ -1,13 +1,13 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Upload, Report, Users, Settings } from 'lucide-react';
+import { Home, Upload, Reports, Users, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Dashboard', to: '/dashboard', icon: Home },
   { name: 'Upload Data', to: '/upload', icon: Upload },
-  { name: 'Reports', to: '/reports', icon: Report },
+  { name: 'Reports', to: '/reports', icon: Reports },
   { name: 'Investors', to: '/investors', icon: Users },
   { name: 'Settings', to: '/settings', icon: Settings },
 ];
