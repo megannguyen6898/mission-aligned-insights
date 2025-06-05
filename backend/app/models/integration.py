@@ -15,7 +15,7 @@ class Integration(Base):
     token_expiry = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(Boolean, default=True)
     external_account_id = Column(String, nullable=True)
-    metadata = Column(Text, nullable=True)  # JSON for provider-specific data
+    integration_metadata = Column(Text, nullable=True)  # JSON for provider-specific data
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

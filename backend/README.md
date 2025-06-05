@@ -15,7 +15,12 @@ source env/bin/activate  # On Windows: env\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 ```
+### 1.1. Backend Build
 
+```bash
+cd ./backend
+docker-compose up --build
+```
 ### 2. Database Setup
 
 ```bash
@@ -123,3 +128,13 @@ pytest --cov=app
 # Production run example
 gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker
 ```
+
+## Debug Notes
+- Fixed a critical error where the User model referenced a non-existent backref (data_uploads)
+- Resolved metadata name conflict in SQLAlchemy (metadata is a reserved keyword)
+- Discovered an orphaned alembic.ini with no alembic/ folder
+- Initialized Alembic and fixed env.py to point to your actual SQLAlchemy Base and models
+- Ran alembic upgrade head successfully to create database tables
+- Verified in PostgreSQL that all required tables, including `users`, now exist in the `mega_x` database
+docker-compose exec db psql -U postgres -d mega_x
+\dt
