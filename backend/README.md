@@ -1,7 +1,7 @@
 
-# Mega X Backend
+# ImpactView Backend
 
-FastAPI backend for Mega X - AI-Powered Impact Reporting Platform
+FastAPI backend for ImpactView - AI-Powered Impact Reporting Platform
 
 ## Setup Instructions
 

@@ -61,7 +61,7 @@ const Signup: React.FC = () => {
         <div className="text-center">
           <h2 className="text-3xl font-bold text-mega-dark">Create your account</h2>
           <p className="mt-2 text-sm text-gray-600">
-            Join Mega X and start tracking your impact
+            Join ImpactView and start tracking your impact
           </p>
         </div>
         

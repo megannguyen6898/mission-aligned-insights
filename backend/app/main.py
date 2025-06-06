@@ -13,7 +13,7 @@ from .api.routes import (
 )
 
 app = FastAPI(
-    title="Mega X API",
+    title="ImpactView API",
     description="AI-Powered Impact Reporting Platform for Social Enterprises",
     version="1.0.0"
 )
@@ -38,7 +38,7 @@ app.include_router(investors_router, prefix="/api/v1")
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to Mega X API", "version": "1.0.0"}
+    return {"message": "Welcome to ImpactView API", "version": "1.0.0"}
 
 @app.get("/health")
 async def health_check():

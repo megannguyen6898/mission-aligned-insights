@@ -13,7 +13,7 @@ const TopNavbar: React.FC = () => {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <h1 className="text-xl font-bold text-mega-primary">Mega X</h1>
+              <h1 className="text-xl font-bold text-mega-primary">ImpactView</h1>
             </div>
             <div className="ml-6">
               <span className="text-sm text-gray-600">

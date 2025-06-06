@@ -85,7 +85,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       toast({
         title: 'Registration successful',
-        description: 'Welcome to Mega X!',
+        description: 'Welcome to ImpactView!',
       });
     } catch (error: any) {
       console.error('Registration failed:', error);
