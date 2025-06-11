@@ -55,8 +55,8 @@ const sampleInvestors = [
 const Investors: React.FC = () => {
   const [filteredInvestors, setFilteredInvestors] = useState(sampleInvestors);
   const [filters, setFilters] = useState({
-    region: '',
-    funding_type: '',
+    region: 'all',
+    funding_type: 'all',
     min_amount: '',
     max_amount: ''
   });
@@ -68,11 +68,11 @@ const Investors: React.FC = () => {
   const applyFilters = () => {
     let filtered = sampleInvestors;
 
-    if (filters.region) {
+    if (filters.region && filters.region !== 'all') {
       filtered = filtered.filter(inv => inv.region === filters.region || inv.region === 'Global');
     }
 
-    if (filters.funding_type) {
+    if (filters.funding_type && filters.funding_type !== 'all') {
       filtered = filtered.filter(inv => inv.funding_type === filters.funding_type);
     }
 
@@ -162,7 +162,7 @@ Best regards,
                 <SelectValue placeholder="Region" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Regions</SelectItem>
+                <SelectItem value="all">All Regions</SelectItem>
                 <SelectItem value="North America">North America</SelectItem>
                 <SelectItem value="Europe">Europe</SelectItem>
                 <SelectItem value="Asia Pacific">Asia Pacific</SelectItem>
@@ -175,7 +175,7 @@ Best regards,
                 <SelectValue placeholder="Funding Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="Grant">Grant</SelectItem>
                 <SelectItem value="Equity">Equity</SelectItem>
                 <SelectItem value="Debt">Debt</SelectItem>
