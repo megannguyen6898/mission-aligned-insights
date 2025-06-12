@@ -4,7 +4,7 @@ from typing import List, Dict, Any
 import json
 import pandas as pd
 from ..models.dashboard import Dashboard
-from ..models.data_upload import DataUpload
+from ..models.data_upload import DataUpload, UploadStatus
 from ..schemas.dashboard import DashboardCreate
 
 class DashboardService:
@@ -14,7 +14,10 @@ class DashboardService:
         # Use the latest completed upload for dashboard generation
         latest_upload = (
             db.query(DataUpload)
-            .filter(DataUpload.user_id == user_id, DataUpload.status == "completed")
+            .filter(
+                DataUpload.user_id == user_id,
+                DataUpload.status == UploadStatus.completed
+            )
             .order_by(DataUpload.created_at.desc())
             .first()
         )

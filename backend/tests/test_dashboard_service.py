@@ -4,13 +4,13 @@ import pytest
 
 from backend.app.services.dashboard_service import DashboardService
 from backend.app.schemas.dashboard import DashboardCreate
-from backend.app.models.data_upload import DataUpload
+from backend.app.models.data_upload import DataUpload, UploadStatus
 
 class DummyDataUpload:
     def __init__(self, user_id, created_at, metadata):
         self.user_id = user_id
         self.created_at = created_at
-        self.status = "completed"
+        self.status = UploadStatus.completed
         self.upload_metadata = metadata
 
 class DummyQuery:
