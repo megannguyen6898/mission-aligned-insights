@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Upload as UploadIcon, FileText, Database, Sheet } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { dataService } from '../services/data.service';
+import { dashboardService } from '../services/dashboard.service';
 
 const Upload: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -17,36 +19,36 @@ const Upload: React.FC = () => {
     const files = event.target.files;
     if (!files) return;
 
-    const validFiles = Array.from(files).filter(file => {
-      const validTypes = [
-        'text/csv',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/json'
-      ];
-      return validTypes.includes(file.type);
-    });
-
-    if (validFiles.length !== files.length) {
-      toast({
-        title: 'Invalid file type',
-        description: 'Please upload CSV, Excel, or JSON files only',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     setIsUploading(true);
-    
-    // Simulate upload delay
-    setTimeout(() => {
-      setUploadedFiles(prev => [...prev, ...validFiles]);
-      setIsUploading(false);
+
+    try {
+      const uploaded: File[] = [];
+      for (const file of Array.from(files)) {
+        await dataService.uploadFile(file);
+        uploaded.push(file);
+      }
+      setUploadedFiles(prev => [...prev, ...uploaded]);
       toast({
         title: 'Files uploaded successfully',
-        description: `${validFiles.length} file(s) have been processed`,
+        description: `${uploaded.length} file(s) uploaded`,
       });
-    }, 2000);
+
+      // generate a default dashboard using the uploaded data
+      await dashboardService.generateDashboard({
+        title: 'My Dashboard',
+        topics: ['Impact Overview', 'SDG Alignment']
+      });
+      navigate('/dashboard');
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: 'Upload failed',
+        description: 'Please try again',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleIntegration = (service: string) => {
@@ -74,7 +76,7 @@ const Upload: React.FC = () => {
         <CardHeader>
           <CardTitle>Upload Files</CardTitle>
           <CardDescription>
-            Upload your impact data in CSV, Excel, or JSON format
+            Upload your impact data files in any common format
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -91,13 +93,13 @@ const Upload: React.FC = () => {
                 id="file-upload"
                 type="file"
                 multiple
-                accept=".csv,.xlsx,.xls,.json"
+                accept="*/*"
                 onChange={handleFileUpload}
                 className="hidden"
               />
             </div>
             <p className="text-sm text-gray-500 mt-2">
-              CSV, Excel, or JSON files up to 10MB
+              Files up to 10MB
             </p>
           </div>
 
