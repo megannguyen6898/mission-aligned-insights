@@ -11,17 +11,19 @@ class DashboardService:
     async def generate_dashboard(self, user_id: int, dashboard_data: DashboardCreate, db: Session) -> Dashboard:
         """Generate a new dashboard based on user data and selected topics"""
         
-        # Get user's uploaded data
-        user_uploads = db.query(DataUpload).filter(
-            DataUpload.user_id == user_id,
-            DataUpload.status == "completed"
-        ).all()
-        
-        if not user_uploads:
+        # Use the latest completed upload for dashboard generation
+        latest_upload = (
+            db.query(DataUpload)
+            .filter(DataUpload.user_id == user_id, DataUpload.status == "completed")
+            .order_by(DataUpload.created_at.desc())
+            .first()
+        )
+
+        if not latest_upload:
             raise ValueError("No completed data uploads found for dashboard generation")
-        
-        # Generate chart configuration based on topics
-        chart_data = await self._generate_chart_data(dashboard_data.topics, user_uploads)
+
+        # Generate chart configuration based on topics using the latest upload
+        chart_data = await self._generate_chart_data(dashboard_data.topics, latest_upload)
         config_json = await self._generate_dashboard_config(dashboard_data.topics)
         
         # Create dashboard record
@@ -39,14 +41,13 @@ class DashboardService:
         
         return dashboard
     
-    async def _generate_chart_data(self, topics: List[str], uploads: List[DataUpload]) -> Dict[str, Any]:
-        """Generate chart data based on selected topics and available data"""
+    async def _generate_chart_data(self, topics: List[str], upload: DataUpload) -> Dict[str, Any]:
+        """Generate chart data based on selected topics and a data upload"""
 
-        if not uploads:
+        if not upload:
             return {}
 
-        # Use the first completed upload for now
-        metadata = uploads[0].upload_metadata
+        metadata = upload.upload_metadata
         if not metadata:
             return {}
 
