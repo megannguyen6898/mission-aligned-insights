@@ -138,3 +138,5 @@ gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker
 - Verified in PostgreSQL that all required tables, including `users`, now exist in the `mega_x` database
 docker-compose exec db psql -U postgres -d mega_x
 \dt
+- Radix UI throws Uncaught Error: A <Select.Item /> must have a value prop that is not an empty string, which leads to a blank Investors page. The empty string is reserved for clearing the selection. Replaced empty string with "all."
+- Added a top padding class to ensure content appears below the fixed navbar in the authenticated layout

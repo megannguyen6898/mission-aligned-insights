@@ -42,14 +42,14 @@ const sampleData = {
 
 const Dashboard: React.FC = () => {
   const [selectedTopic, setSelectedTopic] = useState('Impact Overview');
-  const [dashboard, setDashboard] = useState<any>(null);
+  const [dashboardData, setDashboardData] = useState<any>(sampleData);
 
   useEffect(() => {
     const fetchDashboards = async () => {
       try {
         const dashboards = await dashboardService.listDashboards();
         if (dashboards && dashboards.length > 0) {
-          setDashboard(dashboards[0]);
+          setDashboardData(dashboards[0].chart_data || sampleData);
         }
       } catch (e) {
         console.error('Failed to load dashboards', e);
@@ -70,12 +70,7 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart
-                    data={
-                      dashboard?.chart_data?.['Impact Overview']?.data ||
-                      sampleData.impact
-                    }
-                  >
+                  <BarChart data={dashboardData.impact || sampleData.impact}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
@@ -100,9 +95,7 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart
-                    data={dashboard?.chart_data?.timeline || sampleData.timeline}
-                  >
+                  <LineChart data={dashboardData.timeline || sampleData.timeline}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis />
@@ -126,10 +119,7 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {(
-                    dashboard?.chart_data?.['SDG Alignment']?.data ||
-                    sampleData.sdg
-                  ).map((sdg: any) => (
+                  {(dashboardData.sdg || sampleData.sdg).map((sdg: any) => (
                     <div key={sdg.sdg} className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="font-medium">SDG {sdg.sdg}: {sdg.title}</span>
