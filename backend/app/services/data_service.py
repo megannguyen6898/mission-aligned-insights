@@ -16,7 +16,8 @@ class DataService:
             if file.filename.endswith('.csv'):
                 df = pd.read_csv(pd.io.common.StringIO(content.decode('utf-8')))
             elif file.filename.endswith(('.xlsx', '.xls')):
-                df = pd.read_excel(pd.io.common.BytesIO(content))
+                sheets = pd.read_excel(pd.io.common.BytesIO(content), sheet_name=None)
+                df = pd.concat(sheets.values(), ignore_index=True)
             elif file.filename.endswith('.json'):
                 data = json.loads(content.decode('utf-8'))
                 df = pd.json_normalize(data)
@@ -61,7 +62,8 @@ class DataService:
             if file.filename.endswith('.csv'):
                 df = pd.read_csv(pd.io.common.StringIO(content.decode('utf-8')))
             elif file.filename.endswith(('.xlsx', '.xls')):
-                df = pd.read_excel(pd.io.common.BytesIO(content))
+                sheets = pd.read_excel(pd.io.common.BytesIO(content), sheet_name=None)
+                df = pd.concat(sheets.values(), ignore_index=True)
             elif file.filename.endswith('.json'):
                 data = json.loads(content.decode('utf-8'))
                 df = pd.json_normalize(data)
