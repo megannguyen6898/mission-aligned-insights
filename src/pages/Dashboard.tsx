@@ -42,14 +42,14 @@ const sampleData = {
 
 const Dashboard: React.FC = () => {
   const [selectedTopic, setSelectedTopic] = useState('Impact Overview');
-  const [dashboardData, setDashboardData] = useState<any>(sampleData);
+  const [dashboards, setDashboards] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchDashboards = async () => {
       try {
-        const dashboards = await dashboardService.listDashboards();
-        if (dashboards && dashboards.length > 0) {
-          setDashboardData(dashboards[0].chart_data || sampleData);
+        const loadedDashboards = await dashboardService.listDashboards();
+        if (loadedDashboards && loadedDashboards.length > 0) {
+          setDashboards(loadedDashboards);
         }
       } catch (e) {
         console.error('Failed to load dashboards', e);
@@ -58,7 +58,7 @@ const Dashboard: React.FC = () => {
     fetchDashboards();
   }, []);
 
-  const renderContent = () => {
+  const renderContent = (dashboardData: any) => {
     switch (selectedTopic) {
       case 'Impact Overview':
         return (
@@ -163,7 +163,14 @@ const Dashboard: React.FC = () => {
         </Select>
       </div>
       
-      {renderContent()}
+      {dashboards.length > 0
+        ? dashboards.map((dashboard) => (
+            <div key={dashboard.id} className="space-y-4">
+              <h2 className="text-2xl font-bold text-gray-800">{dashboard.title}</h2>
+              {renderContent(dashboard.chart_data || sampleData)}
+            </div>
+          ))
+        : renderContent(sampleData)}
     </div>
   );
 };
