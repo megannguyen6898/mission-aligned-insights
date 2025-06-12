@@ -75,8 +75,14 @@ const Dashboard: React.FC = () => {
                     <XAxis dataKey="name" />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="before" fill="#f3f4f6" />
-                    <Bar dataKey="after" fill="#20c6cd" />
+                    {dashboardData.impact && dashboardData.impact[0]?.before !== undefined ? (
+                      <>
+                        <Bar dataKey="before" fill="#f3f4f6" />
+                        <Bar dataKey="after" fill="#20c6cd" />
+                      </>
+                    ) : (
+                      <Bar dataKey="value" fill="#20c6cd" />
+                    )}
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -94,8 +100,14 @@ const Dashboard: React.FC = () => {
                     <XAxis dataKey="month" />
                     <YAxis />
                     <Tooltip />
-                    <Line type="monotone" dataKey="beneficiaries" stroke="#20c6cd" strokeWidth={3} />
-                    <Line type="monotone" dataKey="impact" stroke="#000000" strokeWidth={3} />
+                    {dashboardData.timeline && dashboardData.timeline[0]?.beneficiaries !== undefined ? (
+                      <>
+                        <Line type="monotone" dataKey="beneficiaries" stroke="#20c6cd" strokeWidth={3} />
+                        <Line type="monotone" dataKey="impact" stroke="#000000" strokeWidth={3} />
+                      </>
+                    ) : (
+                      <Line type="monotone" dataKey="value" stroke="#20c6cd" strokeWidth={3} />
+                    )}
                   </LineChart>
                 </ResponsiveContainer>
               </CardContent>

@@ -4,6 +4,7 @@ import json
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 from typing import Dict, Any
+from ..models.data_upload import DataUpload
 
 class DataService:
     async def process_uploaded_file(self, file: UploadFile, upload_id: int, db: Session) -> Dict[str, Any]:
@@ -26,14 +27,23 @@ class DataService:
             if df.empty:
                 raise ValueError("File contains no data")
             
-            # Store processed data (in production, save to file system or cloud storage)
+            # Store processed data and entire dataset for later analysis
             processed_data = {
                 "columns": df.columns.tolist(),
                 "row_count": len(df),
-                "sample_data": df.head(5).to_dict('records'),
-                "data_types": df.dtypes.astype(str).to_dict()
+                "sample_data": df.head(5).to_dict("records"),
+                "data_types": df.dtypes.astype(str).to_dict(),
+                "records": df.to_dict("records")
             }
-            
+
+            # Persist metadata in the DataUpload record
+            upload = db.query(DataUpload).filter(DataUpload.id == upload_id).first()
+            if upload:
+                upload.file_name = file.filename
+                upload.upload_metadata = json.dumps(processed_data)
+                db.commit()
+                db.refresh(upload)
+
             return {
                 "row_count": len(df),
                 "columns": df.columns.tolist(),

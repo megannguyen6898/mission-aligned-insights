@@ -1,6 +1,8 @@
 
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
+import json
+import pandas as pd
 from ..models.dashboard import Dashboard
 from ..models.data_upload import DataUpload
 from ..schemas.dashboard import DashboardCreate
@@ -39,48 +41,46 @@ class DashboardService:
     
     async def _generate_chart_data(self, topics: List[str], uploads: List[DataUpload]) -> Dict[str, Any]:
         """Generate chart data based on selected topics and available data"""
-        
-        chart_data = {}
-        
-        for topic in topics:
-            if topic == "Impact Overview":
-                chart_data[topic] = {
-                    "type": "summary_cards",
-                    "data": [
-                        {"label": "Total Beneficiaries", "value": 1250, "change": "+15%"},
-                        {"label": "Programs Active", "value": 8, "change": "+2"},
-                        {"label": "Impact Score", "value": 85, "change": "+5pts"}
-                    ]
-                }
-            elif topic == "SDG Alignment":
-                chart_data[topic] = {
-                    "type": "sdg_wheel",
-                    "data": [
-                        {"sdg": 1, "name": "No Poverty", "score": 85},
-                        {"sdg": 3, "name": "Good Health", "score": 72},
-                        {"sdg": 4, "name": "Quality Education", "score": 90},
-                        {"sdg": 8, "name": "Decent Work", "score": 68}
-                    ]
-                }
-            elif topic == "Beneficiary Demographics":
-                chart_data[topic] = {
-                    "type": "demographics_chart",
-                    "data": {
-                        "age_groups": [
-                            {"range": "18-25", "count": 320},
-                            {"range": "26-35", "count": 450},
-                            {"range": "36-50", "count": 380},
-                            {"range": "50+", "count": 100}
-                        ],
-                        "gender": [
-                            {"category": "Female", "count": 720},
-                            {"category": "Male", "count": 480},
-                            {"category": "Other", "count": 50}
-                        ]
-                    }
-                }
-            # Add more topic-specific chart generation logic
-        
+
+        if not uploads:
+            return {}
+
+        # Use the first completed upload for now
+        metadata = uploads[0].upload_metadata
+        if not metadata:
+            return {}
+
+        data = json.loads(metadata)
+        records = data.get("records", [])
+        df = pd.DataFrame(records)
+
+        chart_data: Dict[str, Any] = {
+            "impact": [],
+            "sdg": [],
+            "timeline": []
+        }
+
+        numeric_cols = df.select_dtypes(include="number").columns.tolist()
+        for col in numeric_cols:
+            chart_data["impact"].append({"name": col, "value": float(df[col].mean())})
+
+        date_cols = [c for c in df.columns if "date" in c.lower() or "month" in c.lower()]
+        if date_cols and numeric_cols:
+            date_col = date_cols[0]
+            df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+            timeline = df.dropna(subset=[date_col])
+            if not timeline.empty:
+                group = timeline.groupby(timeline[date_col].dt.strftime("%b"))[numeric_cols[0]].mean().reset_index()
+                group.columns = ["month", "value"]
+                chart_data["timeline"] = group.to_dict("records")
+
+        sdg_cols = [c for c in df.columns if c.lower() == "sdg"]
+        if sdg_cols:
+            sdg_col = sdg_cols[0]
+            counts = df[sdg_col].value_counts(normalize=True) * 100
+            for sdg_value, pct in counts.items():
+                chart_data["sdg"].append({"sdg": sdg_value, "title": str(sdg_value), "score": round(pct, 2)})
+
         return chart_data
     
     async def _generate_dashboard_config(self, topics: List[str]) -> Dict[str, Any]:
