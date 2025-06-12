@@ -2,6 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List
+import json
 from ...database import get_db
 from ...schemas.data import DataUploadResponse, DataUploadRequest
 from ...models.data_upload import DataUpload, SourceType, UploadStatus
@@ -35,6 +36,9 @@ async def upload_data(
         result = await data_service.process_uploaded_file(file, data_upload.id, db)
         data_upload.status = UploadStatus.completed
         data_upload.row_count = result.get("row_count", 0)
+        metadata = result.get("processed_data")
+        if metadata:
+            data_upload.upload_metadata = json.dumps(metadata)
     except Exception as e:
         data_upload.status = UploadStatus.failed
         data_upload.error_message = str(e)

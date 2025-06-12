@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Download, Eye } from 'lucide-react';
+import { FileText, Download, Eye, Image } from 'lucide-react';
+import { BarChart, Bar } from 'recharts';
 import { useToast } from '@/hooks/use-toast';
+import { dashboardService } from '../services/dashboard.service';
 
 const frameworks = [
   {
@@ -54,7 +56,20 @@ const sampleReports = [
 const Reports: React.FC = () => {
   const [selectedFramework, setSelectedFramework] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [dashboards, setDashboards] = useState<any[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchDashboards = async () => {
+      try {
+        const response = await dashboardService.listDashboards();
+        setDashboards(response || []);
+      } catch (e) {
+        console.error('Failed to load dashboards', e);
+      }
+    };
+    fetchDashboards();
+  }, []);
 
   const generateReport = async () => {
     if (!selectedFramework) {
@@ -128,6 +143,25 @@ const Reports: React.FC = () => {
               </div>
             ))}
           </div>
+
+          {dashboards.length > 0 && (
+            <div className="mb-6 space-y-2">
+              <p className="text-sm text-gray-600">Select dashboards to include:</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {dashboards.map((d) => (
+                  <div key={d.id} className="border rounded p-2 flex items-center space-x-2">
+                    <Image className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm mr-2">{d.title}</span>
+                    {d.chart_data?.['Impact Overview'] && (
+                      <BarChart width={80} height={50} data={d.chart_data['Impact Overview'].data}>
+                        <Bar dataKey="value" fill="#20c6cd" />
+                      </BarChart>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex space-x-4">
             <Button

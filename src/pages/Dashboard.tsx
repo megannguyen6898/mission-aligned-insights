@@ -75,8 +75,14 @@ const Dashboard: React.FC = () => {
                     <XAxis dataKey="name" />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="before" fill="#f3f4f6" />
-                    <Bar dataKey="after" fill="#20c6cd" />
+                    {dashboard?.chart_data?.['Impact Overview']?.type === 'bar' ? (
+                      <Bar dataKey="value" fill="#20c6cd" />
+                    ) : (
+                      <>
+                        <Bar dataKey="before" fill="#f3f4f6" />
+                        <Bar dataKey="after" fill="#20c6cd" />
+                      </>
+                    )}
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
