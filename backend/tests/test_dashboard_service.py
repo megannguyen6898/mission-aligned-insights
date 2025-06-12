@@ -53,3 +53,13 @@ async def test_generate_dashboard_uses_latest_upload():
 
     assert dashboard.chart_data["impact"][0]["value"] == 10
     assert db.added is dashboard
+
+
+@pytest.mark.asyncio
+async def test_generate_dashboard_without_uploads():
+    db = DummyDB([])
+    service = DashboardService()
+    dashboard_data = DashboardCreate(title="Dash", topics=["impact"])
+
+    with pytest.raises(ValueError, match="No completed data uploads found for dashboard generation"):
+        await service.generate_dashboard(1, dashboard_data, db)
