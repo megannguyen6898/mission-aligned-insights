@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
 
@@ -28,11 +29,11 @@ const Header = () => {
             <a href="#pricing" className="text-gray-600 hover:text-mega-primary transition-colors">
               Pricing
             </a>
-            <Button variant="outline" className="border-mega-primary text-mega-primary hover:bg-mega-primary hover:text-white">
-              Sign In
+            <Button asChild variant="outline" className="border-mega-primary text-mega-primary hover:bg-mega-primary hover:text-white">
+              <Link to="/login">Sign In</Link>
             </Button>
-            <Button className="bg-mega-primary hover:bg-mega-primary/90 text-white">
-              Get Started
+            <Button asChild className="bg-mega-primary hover:bg-mega-primary/90 text-white">
+              <Link to="/signup">Get Started</Link>
             </Button>
           </nav>
 
@@ -61,11 +62,11 @@ const Header = () => {
                 Pricing
               </a>
               <div className="flex flex-col space-y-2 px-3 pt-2">
-                <Button variant="outline" className="border-mega-primary text-mega-primary">
-                  Sign In
+                <Button asChild variant="outline" className="border-mega-primary text-mega-primary">
+                  <Link to="/login">Sign In</Link>
                 </Button>
-                <Button className="bg-mega-primary hover:bg-mega-primary/90 text-white">
-                  Get Started
+                <Button asChild className="bg-mega-primary hover:bg-mega-primary/90 text-white">
+                  <Link to="/signup">Get Started</Link>
                 </Button>
               </div>
             </div>

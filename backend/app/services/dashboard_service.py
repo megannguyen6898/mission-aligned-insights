@@ -1,6 +1,8 @@
 
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
+import pandas as pd
+import json
 from ..models.dashboard import Dashboard
 from ..models.data_upload import DataUpload
 from ..schemas.dashboard import DashboardCreate
@@ -42,8 +44,24 @@ class DashboardService:
         
         chart_data = {}
         
+        df = pd.DataFrame()
+        if uploads:
+            meta = uploads[0].upload_metadata
+            if meta:
+                try:
+                    parsed = json.loads(meta)
+                    if "sample_data" in parsed:
+                        df = pd.DataFrame(parsed["sample_data"])
+                except json.JSONDecodeError:
+                    pass
+
         for topic in topics:
-            if topic == "Impact Overview":
+            if topic == "Impact Overview" and not df.empty:
+                bars = []
+                for col in df.select_dtypes(include="number").columns:
+                    bars.append({"name": col, "value": float(df[col].sum())})
+                chart_data[topic] = {"type": "bar", "data": bars}
+            elif topic == "Impact Overview":
                 chart_data[topic] = {
                     "type": "summary_cards",
                     "data": [

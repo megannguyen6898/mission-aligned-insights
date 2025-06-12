@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { dashboardService } from '../services/dashboard.service';
 
 const dashboardTopics = [
   'Impact Overview',
@@ -41,6 +42,21 @@ const sampleData = {
 
 const Dashboard: React.FC = () => {
   const [selectedTopic, setSelectedTopic] = useState('Impact Overview');
+  const [dashboard, setDashboard] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchDashboards = async () => {
+      try {
+        const dashboards = await dashboardService.listDashboards();
+        if (dashboards && dashboards.length > 0) {
+          setDashboard(dashboards[0]);
+        }
+      } catch (e) {
+        console.error('Failed to load dashboards', e);
+      }
+    };
+    fetchDashboards();
+  }, []);
 
   const renderContent = () => {
     switch (selectedTopic) {
@@ -54,13 +70,24 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={sampleData.impact}>
+                  <BarChart
+                    data={
+                      dashboard?.chart_data?.['Impact Overview']?.data ||
+                      sampleData.impact
+                    }
+                  >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="before" fill="#f3f4f6" />
-                    <Bar dataKey="after" fill="#20c6cd" />
+                    {dashboard?.chart_data?.['Impact Overview']?.type === 'bar' ? (
+                      <Bar dataKey="value" fill="#20c6cd" />
+                    ) : (
+                      <>
+                        <Bar dataKey="before" fill="#f3f4f6" />
+                        <Bar dataKey="after" fill="#20c6cd" />
+                      </>
+                    )}
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -73,7 +100,9 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={sampleData.timeline}>
+                  <LineChart
+                    data={dashboard?.chart_data?.timeline || sampleData.timeline}
+                  >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis />
@@ -97,7 +126,10 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {sampleData.sdg.map((sdg) => (
+                  {(
+                    dashboard?.chart_data?.['SDG Alignment']?.data ||
+                    sampleData.sdg
+                  ).map((sdg: any) => (
                     <div key={sdg.sdg} className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="font-medium">SDG {sdg.sdg}: {sdg.title}</span>
