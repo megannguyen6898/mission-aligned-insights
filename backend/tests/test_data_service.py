@@ -42,6 +42,12 @@ def create_excel_upload():
     upload = UploadFile(filename='test.xlsx', file=BytesIO(buffer.getvalue()))
     return upload, combined
 
+def create_csv_upload(delimiter: str):
+    df = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})
+    csv_bytes = df.to_csv(sep=delimiter, index=False).encode('utf-8')
+    upload = UploadFile(filename='test.csv', file=BytesIO(csv_bytes))
+    return upload, df
+
 @pytest.mark.asyncio
 async def test_process_uploaded_file_multi_sheet():
     upload, combined = create_excel_upload()
@@ -62,4 +68,14 @@ async def test_validate_data_file_multi_sheet():
     assert result['valid'] is True
     assert result['row_count'] == len(combined)
     assert result['columns'] == list(combined.columns)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("delimiter", [" ", "\t"])
+async def test_validate_space_or_tab_delimited_csv(delimiter):
+    upload, df = create_csv_upload(delimiter)
+    service = DataService()
+    result = await service.validate_data_file(upload)
+    assert result['valid'] is True
+    assert result['columns'] == list(df.columns)
 

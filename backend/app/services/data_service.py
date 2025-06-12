@@ -14,7 +14,11 @@ class DataService:
         try:
             # Determine file type and parse accordingly
             if file.filename.endswith('.csv'):
-                df = pd.read_csv(pd.io.common.StringIO(content.decode('utf-8')))
+                df = pd.read_csv(
+                    pd.io.common.StringIO(content.decode("utf-8")),
+                    sep=None,
+                    engine="python",
+                )
             elif file.filename.endswith(('.xlsx', '.xls')):
                 sheets = pd.read_excel(pd.io.common.BytesIO(content), sheet_name=None)
                 df = pd.concat(sheets.values(), ignore_index=True)
@@ -60,7 +64,11 @@ class DataService:
         
         try:
             if file.filename.endswith('.csv'):
-                df = pd.read_csv(pd.io.common.StringIO(content.decode('utf-8')))
+                df = pd.read_csv(
+                    pd.io.common.StringIO(content.decode("utf-8")),
+                    sep=None,
+                    engine="python",
+                )
             elif file.filename.endswith(('.xlsx', '.xls')):
                 sheets = pd.read_excel(pd.io.common.BytesIO(content), sheet_name=None)
                 df = pd.concat(sheets.values(), ignore_index=True)
