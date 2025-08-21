@@ -10,8 +10,8 @@ class Integration(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     provider = Column(String, nullable=False)  # "xero", "google_sheets", "google_docs"
-    access_token = Column(Text, nullable=True)  # Encrypted
-    refresh_token = Column(Text, nullable=True)  # Encrypted
+    encrypted_access_token = Column(Text, nullable=True)
+    encrypted_refresh_token = Column(Text, nullable=True)
     token_expiry = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(Boolean, default=True)
     external_account_id = Column(String, nullable=True)
