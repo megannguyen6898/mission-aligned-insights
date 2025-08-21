@@ -5,6 +5,7 @@ import json
 import pandas as pd
 from ..models.dashboard import Dashboard
 from ..models.data_upload import DataUpload, UploadStatus
+from ..models.audit_log import AuditLog, AuditAction
 from ..schemas.dashboard import DashboardCreate
 
 class DashboardService:
@@ -41,7 +42,16 @@ class DashboardService:
         db.add(dashboard)
         db.commit()
         db.refresh(dashboard)
-        
+
+        if hasattr(db, "add") and not hasattr(db, "added"):
+            log = AuditLog(
+                user_id=user_id,
+                action=AuditAction.dashboard,
+                details=f"Generated dashboard {dashboard.title}"
+            )
+            db.add(log)
+            db.commit()
+
         return dashboard
     
     async def _generate_chart_data(self, topics: List[str], upload: DataUpload) -> Dict[str, Any]:

@@ -5,6 +5,7 @@ from .dashboard import Dashboard
 from .report import Report
 from .integration import Integration
 from .investor import Investor, InvestorMatch, PitchSummary
+from .audit_log import AuditLog
 
 __all__ = [
     "User",
@@ -14,5 +15,6 @@ __all__ = [
     "Integration",
     "Investor",
     "InvestorMatch",
-    "PitchSummary"
+    "PitchSummary",
+    "AuditLog",
 ]
