@@ -30,6 +30,7 @@ git clone <YOUR_GIT_URL>
 cd <YOUR_PROJECT_NAME>
 
 # Step 3: Install the necessary dependencies.
+cd frontend
 npm install
 
 # Step 4: Start the development server with auto-reloading and an instant preview.
@@ -79,5 +80,10 @@ Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-trick
 docker-compose up --build # If image hasn't been built
 # Option B: run directly with Uvicorn
 # uvicorn app.main:app --reload
+cd frontend
 npm install         # first time only
 npm run dev
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for details on encryption, authentication, audit logging, and data retention.
