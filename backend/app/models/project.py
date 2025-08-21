@@ -3,6 +3,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
 from ..database import Base
+from .activity import Activity
 
 
 class Project(Base):

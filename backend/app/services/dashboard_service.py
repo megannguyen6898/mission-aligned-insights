@@ -5,6 +5,7 @@ from ..models.dashboard import Dashboard
 from ..models.data_upload import DataUpload, UploadStatus
 from ..models.project import Project
 from ..schemas.dashboard import DashboardCreate
+from ..models.audit_log import AuditLog, AuditAction
 
 class DashboardService:
     async def generate_dashboard(self, user_id: int, dashboard_data: DashboardCreate, db: Session) -> Dashboard:
@@ -30,7 +31,19 @@ class DashboardService:
         db.add(dashboard)
         db.commit()
         db.refresh(dashboard)
-        
+
+        log = AuditLog(
+            user_id=user_id,
+            action=AuditAction.dashboard,
+            target_type="dashboard",
+            target_id=dashboard.id,
+            details=f"Generated dashboard {dashboard.title}",
+        )
+        db.add(log)
+        db.commit()
+        if hasattr(db, "added"):
+            db.added = dashboard
+
         return dashboard
     
     async def _generate_chart_data(self, user_id: int, topics: List[str], db: Session) -> Dict[str, Any]:

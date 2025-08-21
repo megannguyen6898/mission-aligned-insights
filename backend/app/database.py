@@ -18,3 +18,6 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# Import models to register with SQLAlchemy metadata
+from . import models  # noqa: F401
