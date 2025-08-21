@@ -53,12 +53,12 @@ class DummyQuery:
 class DummyDB:
     def __init__(self, projects):
         self.projects = projects
-        self.added = None
+        self.added = []
     def query(self, model):
         assert model is Project
         return DummyQuery(self.projects)
     def add(self, obj):
-        self.added = obj
+        self.added.append(obj)
     def commit(self):
         pass
     def refresh(self, obj):
@@ -81,7 +81,7 @@ def test_generate_dashboard_aggregates_metrics_by_user():
     dashboard = asyncio.run(service.generate_dashboard(1, dashboard_data, db))
 
     assert dashboard.chart_data["impact"][0]["value"] == 15
-    assert db.added is dashboard
+    assert db.added[0] is dashboard
 
 
 def test_generate_dashboard_without_projects():

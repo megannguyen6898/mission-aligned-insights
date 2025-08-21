@@ -1,6 +1,7 @@
 import pandas as pd
 from io import BytesIO
 import pytest
+import asyncio
 from fastapi import UploadFile
 
 from backend.app.services.data_service import DataService
@@ -8,8 +9,10 @@ from backend.app.models.data_upload import DataUpload
 
 class DummyUpload:
     def __init__(self):
+        self.id = 1
         self.file_name = None
         self.upload_metadata = None
+        self.user_id = 1
 
 class DummyQuery:
     def __init__(self, obj):
@@ -25,6 +28,8 @@ class DummyDB:
     def query(self, model):
         assert model is DataUpload
         return DummyQuery(self.upload)
+    def add(self, obj):
+        pass
     def commit(self):
         pass
     def refresh(self, obj):
@@ -48,34 +53,31 @@ def create_csv_upload(delimiter: str):
     upload = UploadFile(filename='test.csv', file=BytesIO(csv_bytes))
     return upload, df
 
-@pytest.mark.asyncio
-async def test_process_uploaded_file_multi_sheet():
+def test_process_uploaded_file_multi_sheet():
     upload, combined = create_excel_upload()
     dummy_upload = DummyUpload()
     db = DummyDB(dummy_upload)
     service = DataService()
-    result = await service.process_uploaded_file(upload, 1, db)
+    result = asyncio.run(service.process_uploaded_file(upload, 1, db))
 
     assert result['row_count'] == len(combined)
     assert result['processed_data']['row_count'] == len(combined)
     assert result['processed_data']['records'] == combined.to_dict('records')
 
-@pytest.mark.asyncio
-async def test_validate_data_file_multi_sheet():
+def test_validate_data_file_multi_sheet():
     upload, combined = create_excel_upload()
     service = DataService()
-    result = await service.validate_data_file(upload)
+    result = asyncio.run(service.validate_data_file(upload))
     assert result['valid'] is True
     assert result['row_count'] == len(combined)
     assert result['columns'] == list(combined.columns)
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("delimiter", [" ", "\t"])
-async def test_validate_space_or_tab_delimited_csv(delimiter):
+def test_validate_space_or_tab_delimited_csv(delimiter):
     upload, df = create_csv_upload(delimiter)
     service = DataService()
-    result = await service.validate_data_file(upload)
+    result = asyncio.run(service.validate_data_file(upload))
     assert result['valid'] is True
     assert result['columns'] == list(df.columns)
 

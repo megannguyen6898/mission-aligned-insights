@@ -6,6 +6,7 @@ from ...database import get_db
 from ...schemas.auth import LoginRequest, Token
 from ...schemas.user import UserCreate, User as UserSchema
 from ...models.user import User
+from ...models.audit_log import AuditLog
 from ...core.security import verify_password, get_password_hash, create_access_token, create_refresh_token, verify_token
 from ...api.deps import security
 
@@ -54,7 +55,16 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     
     access_token = create_access_token(data={"sub": str(user.id)})
     refresh_token = create_refresh_token(data={"sub": str(user.id)})
-    
+
+    log = AuditLog(
+        user_id=user.id,
+        action="login",
+        resource_type="user",
+        resource_id=user.id,
+    )
+    db.add(log)
+    db.commit()
+
     return Token(access_token=access_token, refresh_token=refresh_token)
 
 @router.post("/refresh", response_model=Token)

@@ -26,3 +26,4 @@ class User(Base):
     integrations = relationship("Integration", back_populates="user")
     reports = relationship("Report", back_populates="user")
     projects = relationship("Project", back_populates="user")
+    audit_logs = relationship("AuditLog", back_populates="user")

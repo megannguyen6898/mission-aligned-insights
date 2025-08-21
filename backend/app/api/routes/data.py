@@ -5,6 +5,7 @@ from typing import List
 from ...database import get_db
 from ...schemas.data import DataUploadResponse, DataUploadRequest
 from ...models.data_upload import DataUpload, SourceType, UploadStatus
+from ...models.audit_log import AuditLog
 from ...models.user import User
 from ...api.deps import get_current_user
 from ...services.data_service import DataService
@@ -65,10 +66,19 @@ async def delete_upload(
     
     if not upload:
         raise HTTPException(status_code=404, detail="Upload not found")
-    
+
+    log = AuditLog(
+        user_id=current_user.id,
+        action="delete",
+        resource_type="data_upload",
+        resource_id=upload.id,
+    )
+    db.add(log)
+    db.commit()
+
     db.delete(upload)
     db.commit()
-    
+
     return {"message": "Upload deleted successfully"}
 
 @router.post("/validate")

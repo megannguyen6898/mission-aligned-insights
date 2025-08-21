@@ -4,6 +4,10 @@ from typing import List, Dict, Any
 from ..models.dashboard import Dashboard
 from ..models.data_upload import DataUpload, UploadStatus
 from ..models.project import Project
+from ..models.audit_log import AuditLog
+from ..models.activity import Activity  # noqa: F401
+from ..models.outcome import Outcome  # noqa: F401
+from ..models.metric import Metric  # noqa: F401
 from ..schemas.dashboard import DashboardCreate
 
 class DashboardService:
@@ -30,7 +34,16 @@ class DashboardService:
         db.add(dashboard)
         db.commit()
         db.refresh(dashboard)
-        
+
+        log = AuditLog(
+            user_id=user_id,
+            action="dashboard_created",
+            resource_type="dashboard",
+            resource_id=dashboard.id,
+        )
+        db.add(log)
+        db.commit()
+
         return dashboard
     
     async def _generate_chart_data(self, user_id: int, topics: List[str], db: Session) -> Dict[str, Any]:
