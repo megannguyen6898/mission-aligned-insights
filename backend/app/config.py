@@ -5,6 +5,7 @@ from typing import List
 class Settings(BaseSettings):
     # Database
     database_url: str
+    database_ssl_mode: str = "prefer"
     
     # JWT
     jwt_secret: str
