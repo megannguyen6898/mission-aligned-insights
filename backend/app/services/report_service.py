@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from .dashboard_service import DashboardService
 from ..models.report import Report
+from ..models.audit_log import AuditLog, AuditAction
 
 
 class ReportService:
@@ -26,6 +27,19 @@ class ReportService:
         db.add(report)
         db.commit()
         db.refresh(report)
+
+        log = AuditLog(
+            user_id=user_id,
+            action=AuditAction.report,
+            target_type="report",
+            target_id=report.id,
+            details=f"Generated report {title}",
+        )
+        db.add(log)
+        db.commit()
+        if hasattr(db, "added"):
+            db.added = report
+
         return report
 
     async def get_report(

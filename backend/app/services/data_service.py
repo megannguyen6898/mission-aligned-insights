@@ -5,6 +5,7 @@ from fastapi import UploadFile
 from sqlalchemy.orm import Session
 from typing import Dict, Any
 from ..models.data_upload import DataUpload
+from ..models.audit_log import AuditLog, AuditAction
 
 class DataService:
     async def process_uploaded_file(self, file: UploadFile, upload_id: int, db: Session) -> Dict[str, Any]:
@@ -48,6 +49,18 @@ class DataService:
                 upload.upload_metadata = json.dumps(processed_data)
                 db.commit()
                 db.refresh(upload)
+
+                log = AuditLog(
+                    user_id=upload.user_id,
+                    action=AuditAction.upload,
+                    target_type="data_upload",
+                    target_id=upload.id,
+                    details=f"Uploaded file {file.filename}",
+                )
+                db.add(log)
+                db.commit()
+                if hasattr(db, "added"):
+                    db.added = upload
 
             return {
                 "row_count": len(df),

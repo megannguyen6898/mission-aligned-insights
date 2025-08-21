@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Bool
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from ..database import Base
+from .user import User
 
 class Integration(Base):
     __tablename__ = "integrations"

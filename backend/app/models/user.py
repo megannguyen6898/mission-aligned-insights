@@ -1,8 +1,8 @@
-
 from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from ..database import Base
+
 
 class User(Base):
     __tablename__ = "users"
@@ -26,3 +26,4 @@ class User(Base):
     integrations = relationship("Integration", back_populates="user")
     reports = relationship("Report", back_populates="user")
     projects = relationship("Project", back_populates="user")
+    audit_logs = relationship("AuditLog", back_populates="user")
