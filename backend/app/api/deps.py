@@ -1,38 +1,105 @@
-
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
+from typing import List
+import requests
+from jose import jwt, JWTError
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+
 from ..database import get_db
-from ..core.security import verify_token
+from ..config import settings
 from ..models.user import User
+
 
 security = HTTPBearer()
 
+
+def verify_token(token: str):
+    """Verify JWT using Auth0 or Firebase public keys."""
+    if settings.auth0_domain and settings.auth0_audience:
+        jwks_url = f"https://{settings.auth0_domain}/.well-known/jwks.json"
+        try:
+            jwks = requests.get(jwks_url).json()
+            unverified_header = jwt.get_unverified_header(token)
+        except Exception:
+            return None
+        rsa_key = {}
+        for key in jwks["keys"]:
+            if key["kid"] == unverified_header.get("kid"):
+                rsa_key = {
+                    "kty": key["kty"],
+                    "kid": key["kid"],
+                    "use": key["use"],
+                    "n": key["n"],
+                    "e": key["e"],
+                }
+                break
+        if not rsa_key:
+            return None
+        try:
+            payload = jwt.decode(
+                token,
+                rsa_key,
+                algorithms=["RS256"],
+                audience=settings.auth0_audience,
+                issuer=f"https://{settings.auth0_domain}/",
+            )
+            return payload
+        except JWTError:
+            return None
+    elif settings.firebase_project_id:
+        try:
+            return id_token.verify_firebase_token(
+                token,
+                google_requests.Request(),
+                audience=settings.firebase_project_id,
+            )
+        except Exception:
+            return None
+    return None
+
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> User:
     token = credentials.credentials
     payload = verify_token(token)
-    
+
     if payload is None or payload.get("type") != "access":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials"
+            detail="Could not validate credentials",
         )
-    
+
     user_id = payload.get("sub")
     if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials"
+            detail="Could not validate credentials",
         )
-    
+
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found"
+            detail="User not found",
         )
-    
+
+    user.roles = payload.get("roles", [])
     return user
+
+
+def require_roles(required_roles: List[str]):
+    def role_dependency(user: User = Depends(get_current_user)):
+        user_roles = getattr(user, "roles", [])
+        if not any(role in user_roles for role in required_roles):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions",
+            )
+        return user
+
+    return role_dependency
+

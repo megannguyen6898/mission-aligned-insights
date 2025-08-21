@@ -45,6 +45,15 @@ Required environment variables:
 - `OPENAI_API_KEY`: OpenAI API key for LLM features
 - `XERO_CLIENT_ID` & `XERO_CLIENT_SECRET`: Xero OAuth credentials
 - `GOOGLE_CLIENT_ID` & `GOOGLE_CLIENT_SECRET`: Google OAuth credentials
+- `AUTH0_DOMAIN` & `AUTH0_AUDIENCE`: Auth0 settings for JWT verification (optional)
+- `FIREBASE_PROJECT_ID`: Firebase project ID for token verification (optional)
+
+### Authentication Setup
+
+The backend verifies incoming JWTs using either Auth0 or Firebase public keys.
+Provide the corresponding environment variables above and ensure tokens include a
+`roles` claim. Role-based access control is enforced on sensitive routes such as
+`POST /api/v1/integrations/sync`, which requires an `admin` role.
 
 ### 4. Run the Backend
 

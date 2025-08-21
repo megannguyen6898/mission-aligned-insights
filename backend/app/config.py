@@ -1,6 +1,6 @@
 
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Optional
 
 class Settings(BaseSettings):
     # Database
@@ -27,6 +27,11 @@ class Settings(BaseSettings):
     
     # Security
     secret_key: str
+
+    # External Auth Providers
+    auth0_domain: Optional[str] = None
+    auth0_audience: Optional[str] = None
+    firebase_project_id: Optional[str] = None
     
     # CORS
     allowed_origins: str = "http://localhost:3000,http://localhost:5173"

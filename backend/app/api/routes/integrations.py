@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ...database import get_db
 from ...models.user import User
-from ...api.deps import get_current_user
+from ...api.deps import get_current_user, require_roles
 from ...services.integration_service import IntegrationService
 
 router = APIRouter(prefix="/integrations", tags=["integrations"])
@@ -60,7 +60,7 @@ async def get_integration_status(
 
 @router.post("/sync")
 async def sync_integrations(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(["admin"])),
     db: Session = Depends(get_db)
 ):
     integration_service = IntegrationService()
