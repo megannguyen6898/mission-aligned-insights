@@ -53,10 +53,10 @@ htmlcov/
 .ipynb_checkpoints/
 
 # Node.js (frontend)
-node_modules/
-dist/
-build/
-.npm/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.npm/
 
 # Docker volumes (optional)
 postgres_data/

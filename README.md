@@ -74,15 +74,24 @@ To connect a domain, navigate to Project > Settings > Domains and click Connect 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
 
 # What I have done to connect backend to frontend?
+# Running the project
 
-1. Change to virtual env
+### Frontend
+```sh
+cd frontend
+npm install
+npm run dev
+```
+
+### Backend
+
+```sh
+cd backend
 # Option A: run with Docker Compose
 docker-compose up --build # If image hasn't been built
 # Option B: run directly with Uvicorn
-# uvicorn app.main:app --reload
-cd frontend
-npm install         # first time only
-npm run dev
+uvicorn app.main:app --reload
+```
 
 ## Security
 
