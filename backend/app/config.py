@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     firebase_project_id: Optional[str] = None
     
     # CORS
-    allowed_origins: str = "http://localhost:3000,http://localhost:5173"
+    allowed_origins: str = "http://localhost:3000,http://localhost:5173,http://localhost:8080"
     
     @property
     def cors_origins(self) -> List[str]:
