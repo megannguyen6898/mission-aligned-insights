@@ -1,32 +1,21 @@
 
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
-import json
-import pandas as pd
 from ..models.dashboard import Dashboard
 from ..models.data_upload import DataUpload, UploadStatus
+from ..models.project import Project
 from ..schemas.dashboard import DashboardCreate
 
 class DashboardService:
     async def generate_dashboard(self, user_id: int, dashboard_data: DashboardCreate, db: Session) -> Dashboard:
-        """Generate a new dashboard based on user data and selected topics"""
-        
-        # Use the latest completed upload for dashboard generation
-        latest_upload = (
-            db.query(DataUpload)
-            .filter(
-                DataUpload.user_id == user_id,
-                DataUpload.status == UploadStatus.completed
-            )
-            .order_by(DataUpload.created_at.desc())
-            .first()
-        )
+        """Generate a new dashboard based on project metrics for the user"""
 
-        if not latest_upload:
-            raise ValueError("No completed data uploads found for dashboard generation")
+        chart_data = await self._generate_chart_data(user_id, dashboard_data.topics, db)
 
-        # Generate chart configuration based on topics using the latest upload
-        chart_data = await self._generate_chart_data(dashboard_data.topics, latest_upload)
+
+        if not any(chart_data.values()):
+            raise ValueError("No project metrics found for dashboard generation")
+
         config_json = await self._generate_dashboard_config(dashboard_data.topics)
         
         # Create dashboard record
@@ -44,19 +33,10 @@ class DashboardService:
         
         return dashboard
     
-    async def _generate_chart_data(self, topics: List[str], upload: DataUpload) -> Dict[str, Any]:
-        """Generate chart data based on selected topics and a data upload"""
+    async def _generate_chart_data(self, user_id: int, topics: List[str], db: Session) -> Dict[str, Any]:
+        """Aggregate chart data for a user by joining projects with their metrics"""
 
-        if not upload:
-            return {}
-
-        metadata = upload.upload_metadata
-        if not metadata:
-            return {}
-
-        data = json.loads(metadata)
-        records = data.get("records", [])
-        df = pd.DataFrame(records)
+        projects = db.query(Project).filter_by(user_id=user_id).all()
 
         chart_data: Dict[str, Any] = {
             "impact": [],
@@ -64,26 +44,20 @@ class DashboardService:
             "timeline": []
         }
 
-        numeric_cols = df.select_dtypes(include="number").columns.tolist()
-        for col in numeric_cols:
-            chart_data["impact"].append({"name": col, "value": float(df[col].mean())})
+        if not projects:
+            return chart_data
 
-        date_cols = [c for c in df.columns if "date" in c.lower() or "month" in c.lower()]
-        if date_cols and numeric_cols:
-            date_col = date_cols[0]
-            df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
-            timeline = df.dropna(subset=[date_col])
-            if not timeline.empty:
-                group = timeline.groupby(timeline[date_col].dt.strftime("%b"))[numeric_cols[0]].mean().reset_index()
-                group.columns = ["month", "value"]
-                chart_data["timeline"] = group.to_dict("records")
+        metric_totals: Dict[str, List[float]] = {}
 
-        sdg_cols = [c for c in df.columns if c.lower() == "sdg"]
-        if sdg_cols:
-            sdg_col = sdg_cols[0]
-            counts = df[sdg_col].value_counts(normalize=True) * 100
-            for sdg_value, pct in counts.items():
-                chart_data["sdg"].append({"sdg": sdg_value, "title": str(sdg_value), "score": round(pct, 2)})
+        for project in projects:
+            for activity in getattr(project, "activities", []):
+                for outcome in getattr(activity, "outcomes", []):
+                    for metric in getattr(outcome, "metrics", []):
+                        metric_totals.setdefault(metric.name, []).append(metric.value or 0.0)
+
+        for name, values in metric_totals.items():
+            if values:
+                chart_data["impact"].append({"name": name, "value": sum(values) / len(values)})
 
         return chart_data
     

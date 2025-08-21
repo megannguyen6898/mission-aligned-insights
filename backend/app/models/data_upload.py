@@ -32,4 +32,3 @@ class DataUpload(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     user = relationship("User", back_populates="data_uploads")
-    projects = relationship("Project", back_populates="data_upload")

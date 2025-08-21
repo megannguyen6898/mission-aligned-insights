@@ -1,36 +1,62 @@
-import json
-from datetime import datetime, timedelta
+import os
+import sys
+import pathlib
 import pytest
+import asyncio
+
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
+
+os.environ.setdefault("DATABASE_URL", "sqlite://")
+os.environ.setdefault("JWT_SECRET", "test")
+os.environ.setdefault("OPENAI_API_KEY", "test")
+os.environ.setdefault("XERO_CLIENT_ID", "test")
+os.environ.setdefault("XERO_CLIENT_SECRET", "test")
+os.environ.setdefault("XERO_REDIRECT_URI", "http://localhost")
+os.environ.setdefault("GOOGLE_CLIENT_ID", "test")
+os.environ.setdefault("GOOGLE_CLIENT_SECRET", "test")
+os.environ.setdefault("GOOGLE_REDIRECT_URI", "http://localhost")
+os.environ.setdefault("SECRET_KEY", "test")
 
 from backend.app.services.dashboard_service import DashboardService
 from backend.app.schemas.dashboard import DashboardCreate
-from backend.app.models.data_upload import DataUpload, UploadStatus
+from backend.app.models.project import Project
 
-class DummyDataUpload:
-    def __init__(self, user_id, created_at, metadata):
+
+class DummyMetric:
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+class DummyOutcome:
+    def __init__(self, metrics):
+        self.metrics = metrics
+class DummyActivity:
+    def __init__(self, outcomes):
+        self.outcomes = outcomes
+
+class DummyProject:
+    def __init__(self, user_id, activities):
         self.user_id = user_id
-        self.created_at = created_at
-        self.status = UploadStatus.completed
-        self.upload_metadata = metadata
+        self.activities = activities
 
 class DummyQuery:
-    def __init__(self, uploads):
-        self.uploads = uploads
-    def filter(self, *args, **kwargs):
+    def __init__(self, projects):
+        self._projects = projects
+    def filter_by(self, **kwargs):
+        user_id = kwargs.get("user_id")
+        if user_id is not None:
+            self._projects = [p for p in self._projects if p.user_id == user_id]
         return self
-    def order_by(self, *args, **kwargs):
-        self.uploads = sorted(self.uploads, key=lambda u: u.created_at, reverse=True)
-        return self
-    def first(self):
-        return self.uploads[0] if self.uploads else None
+    def all(self):
+        return self._projects
 
 class DummyDB:
-    def __init__(self, uploads):
-        self.uploads = uploads
+    def __init__(self, projects):
+        self.projects = projects
         self.added = None
     def query(self, model):
-        assert model is DataUpload
-        return DummyQuery(self.uploads)
+        assert model is Project
+        return DummyQuery(self.projects)
     def add(self, obj):
         self.added = obj
     def commit(self):
@@ -38,28 +64,31 @@ class DummyDB:
     def refresh(self, obj):
         pass
 
-@pytest.mark.asyncio
-async def test_generate_dashboard_uses_latest_upload():
-    old_metadata = json.dumps({"records": [{"A": 1}]})
-    new_metadata = json.dumps({"records": [{"A": 10}]})
-    old = DummyDataUpload(1, datetime.utcnow() - timedelta(days=1), old_metadata)
-    new = DummyDataUpload(1, datetime.utcnow(), new_metadata)
+def test_generate_dashboard_aggregates_metrics_by_user():
+    metric1 = DummyMetric("beneficiaries", 10)
+    metric2 = DummyMetric("beneficiaries", 20)
+    activity1 = DummyActivity([DummyOutcome([metric1, metric2])])
+    project1 = DummyProject(user_id=1, activities=[activity1])
 
-    db = DummyDB([old, new])
+    metric3 = DummyMetric("beneficiaries", 5)
+    activity2 = DummyActivity([DummyOutcome([metric3])])
+    project2 = DummyProject(user_id=2, activities=[activity2])
+
+    db = DummyDB([project1, project2])
     service = DashboardService()
     dashboard_data = DashboardCreate(title="Dash", topics=["impact"])
 
-    dashboard = await service.generate_dashboard(1, dashboard_data, db)
+    dashboard = asyncio.run(service.generate_dashboard(1, dashboard_data, db))
 
-    assert dashboard.chart_data["impact"][0]["value"] == 10
+    assert dashboard.chart_data["impact"][0]["value"] == 15
     assert db.added is dashboard
 
 
-@pytest.mark.asyncio
-async def test_generate_dashboard_without_uploads():
+def test_generate_dashboard_without_projects():
     db = DummyDB([])
     service = DashboardService()
     dashboard_data = DashboardCreate(title="Dash", topics=["impact"])
 
-    with pytest.raises(ValueError, match="No completed data uploads found for dashboard generation"):
-        await service.generate_dashboard(1, dashboard_data, db)
+    with pytest.raises(ValueError, match="No project metrics found for dashboard generation"):
+        asyncio.run(service.generate_dashboard(1, dashboard_data, db))
+
