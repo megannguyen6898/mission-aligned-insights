@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 from sqlalchemy.orm import Session
 
 from .dashboard_service import DashboardService
+from ..models.project import Project
 from ..models.report import Report
 from ..models.audit_log import AuditLog, AuditAction
 
@@ -17,12 +18,22 @@ class ReportService:
     ) -> Report:
         """Create a basic report record."""
 
+        projects = db.query(Project).filter_by(user_id=user_id).all()
+        metric_totals: Dict[str, float] = {}
+        for project in projects:
+            for activity in getattr(project, "activities", []):
+                for outcome in getattr(activity, "outcomes", []):
+                    for metric in getattr(outcome, "metrics", []):
+                        metric_totals[metric.name] = metric_totals.get(metric.name, 0.0) + (metric.value or 0.0)
+
+        chart_data = await self.dashboard_service._generate_chart_data(user_id, ["impact"], db)
+
         report = Report(
             user_id=user_id,
             title=title,
             framework=framework,
-            metrics={},
-            visualizations={},
+            metrics=metric_totals,
+            visualizations=chart_data,
         )
         db.add(report)
         db.commit()
