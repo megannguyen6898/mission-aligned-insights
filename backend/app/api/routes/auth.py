@@ -56,15 +56,22 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     access_token = create_access_token(data={"sub": str(user.id)})
     refresh_token = create_refresh_token(data={"sub": str(user.id)})
 
-    log = AuditLog(
-        user_id=user.id,
-        action=AuditAction.login,
-        target_type="user",
-        target_id=user.id,
-        details="User login",
-    )
-    db.add(log)
-    db.commit()
+    # --- make audit write non-fatal ---
+    try:
+        log = AuditLog(
+            user_id=user.id,
+            action=AuditAction.login,
+            target_type="user",
+            target_id=user.id,
+            details="User login",
+        )
+        db.add(log)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        # don't crash login if audit fails
+        print("Audit log write failed:", repr(e))
+    # ----------------------------------
 
     return Token(access_token=access_token, refresh_token=refresh_token)
 

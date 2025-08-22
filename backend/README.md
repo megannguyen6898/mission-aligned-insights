@@ -15,7 +15,7 @@ source env/bin/activate  # On Windows: env\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 ```
-### 1.1. Backend Build
+### 1.1. Backend Build - Must do this to connect to the database
 
 ```bash
 cd ./backend
@@ -28,6 +28,9 @@ docker-compose up --build
 docker-compose up db -d
 
 # Create database tables
+## From Docker
+docker compose exec backend alembic upgrade head
+## From host
 alembic upgrade head
 ```
 

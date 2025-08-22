@@ -1,57 +1,74 @@
+// src/pages/auth/Signup.tsx
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Link, useNavigate } from "react-router-dom";
+import { registerUser } from "@/api/auth";
 
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
-const signupSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string().min(6, 'Please confirm your password'),
-  organization_name: z.string().min(2, 'Organization name is required'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+const signupSchema = z
+  .object({
+    name: z.string().min(2, "Name must be at least 2 characters"),
+    email: z.string().email("Please enter a valid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string().min(6, "Please confirm your password"),
+    // keep required if you want to force it in the UI; backend treats it as optional
+    organization_name: z.string().min(2, "Organization name is required"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 type SignupFormData = z.infer<typeof signupSchema>;
 
 const Signup: React.FC = () => {
-  const { register, isLoading } = useAuth();
   const navigate = useNavigate();
+  const [loading, setLoading] = React.useState(false);
 
   const form = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      organization_name: '',
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      organization_name: "",
     },
   });
 
   const onSubmit = async (data: SignupFormData) => {
+    const { confirmPassword, ...registerData } = data;
+    setLoading(true);
+    // clear any previous root error
+    form.clearErrors("root");
+
     try {
-      const { confirmPassword, ...registerData } = data;
-      // Ensure all required fields are present
-      const completeRegisterData = {
-        name: registerData.name,
+      await registerUser({
         email: registerData.email,
+        name: registerData.name,
         password: registerData.password,
-        organization_name: registerData.organization_name,
-      };
-      await register(completeRegisterData);
-      navigate('/onboarding');
-    } catch (error) {
-      // Error handling is done in the AuthContext
+        organization_name: registerData.organization_name, // optional on backend
+      });
+      navigate("/onboarding"); // or "/login"
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.detail ??
+        (typeof err?.response?.data === "string"
+          ? err.response.data
+          : err?.message || "Registration failed");
+
+      // show a visible error in the form
+      form.setError("root", { type: "server", message: msg });
+      // also log for debugging
+      console.error("Registration failed:", err?.response?.status, msg);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -60,17 +77,13 @@ const Signup: React.FC = () => {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-mega-dark">Create your account</h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Join ImpactView and start tracking your impact
-          </p>
+          <p className="mt-2 text-sm text-gray-600">Join ImpactView and start tracking your impact</p>
         </div>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Sign Up</CardTitle>
-            <CardDescription>
-              Create your account to get started with impact reporting
-            </CardDescription>
+            <CardDescription>Create your account to get started with impact reporting</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -82,13 +95,13 @@ const Signup: React.FC = () => {
                     <FormItem>
                       <FormLabel>Full Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter your full name" {...field} />
+                        <Input placeholder="Enter your full name" disabled={loading} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="organization_name"
@@ -96,13 +109,13 @@ const Signup: React.FC = () => {
                     <FormItem>
                       <FormLabel>Organization Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter your organization name" {...field} />
+                        <Input placeholder="Enter your organization name" disabled={loading} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="email"
@@ -110,13 +123,13 @@ const Signup: React.FC = () => {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter your email" {...field} />
+                        <Input type="email" placeholder="Enter your email" disabled={loading} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="password"
@@ -124,13 +137,13 @@ const Signup: React.FC = () => {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Create a password" {...field} />
+                        <Input type="password" placeholder="Create a password" disabled={loading} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="confirmPassword"
@@ -138,26 +151,27 @@ const Signup: React.FC = () => {
                     <FormItem>
                       <FormLabel>Confirm Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Confirm your password" {...field} />
+                        <Input type="password" placeholder="Confirm your password" disabled={loading} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Creating account...' : 'Create Account'}
+
+                {/* Root/server error */}
+                {form.formState.errors.root?.message && (
+                  <p className="text-sm text-red-600">{form.formState.errors.root.message}</p>
+                )}
+
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Creating account..." : "Create Account"}
                 </Button>
               </form>
             </Form>
-            
+
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
-                Already have an account?{' '}
+                Already have an account?{" "}
                 <Link to="/login" className="font-medium text-mega-primary hover:text-mega-primary/80">
                   Sign in
                 </Link>
