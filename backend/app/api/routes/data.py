@@ -16,10 +16,10 @@ router = APIRouter(prefix="/data", tags=["data"])
 
 @router.post("/upload", response_model=DataUploadResponse)
 async def upload_data(
-    file: UploadFile = File(...),
     background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     upload_dir = Path("uploads")
     upload_dir.mkdir(exist_ok=True)
