@@ -24,6 +24,9 @@ docker compose exec backend alembic upgrade head
 # 4) Sanity check
 curl http://localhost:8000/health
 # -> {"status":"healthy"}
+
+# 5) Docker up and running
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 ---
