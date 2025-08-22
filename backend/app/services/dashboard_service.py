@@ -2,6 +2,7 @@
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
 from ..models.dashboard import Dashboard
+from ..models.dashboard_topic import DashboardTopic
 from ..models.data_upload import DataUpload, UploadStatus
 from ..models.project import Project
 from ..schemas.dashboard import DashboardCreate
@@ -45,6 +46,28 @@ class DashboardService:
             db.added = dashboard
 
         return dashboard
+
+    async def get_topics(self, db: Session) -> List[str]:
+        """Return available dashboard topics from the database, seeding defaults if empty"""
+
+        topics = db.query(DashboardTopic).all()
+        if not topics:
+            default_topics = [
+                "Impact Overview",
+                "SDG Alignment",
+                "Financial Performance",
+                "Beneficiary Demographics",
+                "Program Outcomes",
+                "Geographic Distribution",
+                "Time Series Analysis",
+                "Comparative Analysis",
+            ]
+            for name in default_topics:
+                db.add(DashboardTopic(name=name))
+            db.commit()
+            topics = db.query(DashboardTopic).all()
+
+        return [t.name for t in topics]
     
     async def _generate_chart_data(self, user_id: int, topics: List[str], db: Session) -> Dict[str, Any]:
         """Aggregate chart data for a user by joining projects with their metrics"""

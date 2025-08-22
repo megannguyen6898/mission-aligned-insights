@@ -1,5 +1,6 @@
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from pathlib import Path
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
 from ...database import get_db
@@ -9,40 +10,40 @@ from ...models.user import User
 from ...models.audit_log import AuditLog, AuditAction
 from ...api.deps import get_current_user
 from ...services.data_service import DataService
+from ...services.ingestion_service import IngestionService
 
 router = APIRouter(prefix="/data", tags=["data"])
 
 @router.post("/upload", response_model=DataUploadResponse)
 async def upload_data(
     file: UploadFile = File(...),
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # Create data upload record
+    upload_dir = Path("uploads")
+    upload_dir.mkdir(exist_ok=True)
+
     data_upload = DataUpload(
         user_id=current_user.id,
         file_name=file.filename,
         source_type=SourceType.manual,
-        status=UploadStatus.processing
+        status=UploadStatus.pending,
     )
-    
     db.add(data_upload)
     db.commit()
     db.refresh(data_upload)
-    
-    # Process file using DataService
-    data_service = DataService()
-    try:
-        result = await data_service.process_uploaded_file(file, data_upload.id, db)
-        data_upload.status = UploadStatus.completed
-        data_upload.row_count = result.get("row_count", 0)
-    except Exception as e:
-        data_upload.status = UploadStatus.failed
-        data_upload.error_message = str(e)
-    
+
+    file_path = upload_dir / f"{data_upload.id}_{file.filename}"
+    with open(file_path, "wb") as buffer:
+        buffer.write(await file.read())
+    data_upload.file_path = str(file_path)
     db.commit()
     db.refresh(data_upload)
-    
+
+    ingestion_service = IngestionService()
+    background_tasks.add_task(ingestion_service.ingest_upload, data_upload.id, db)
+
     return data_upload
 
 @router.get("/uploads", response_model=List[DataUploadResponse])

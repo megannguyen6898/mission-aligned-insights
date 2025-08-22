@@ -1,6 +1,7 @@
 from .user import User
 from .data_upload import DataUpload
 from .dashboard import Dashboard
+from .dashboard_topic import DashboardTopic
 from .report import Report
 from .project import Project
 from .activity import Activity

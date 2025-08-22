@@ -11,18 +11,9 @@ from ...services.dashboard_service import DashboardService
 router = APIRouter(prefix="/dashboards", tags=["dashboards"])
 
 @router.get("/topics")
-async def get_dashboard_topics():
-    # Available dashboard topics
-    topics = [
-        "Impact Overview",
-        "SDG Alignment", 
-        "Financial Performance",
-        "Beneficiary Demographics",
-        "Program Outcomes",
-        "Geographic Distribution",
-        "Time Series Analysis",
-        "Comparative Analysis"
-    ]
+async def get_dashboard_topics(db: Session = Depends(get_db)):
+    service = DashboardService()
+    topics = await service.get_topics(db)
     return {"topics": topics}
 
 @router.post("/generate", response_model=DashboardResponse)

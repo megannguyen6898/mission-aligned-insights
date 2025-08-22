@@ -20,6 +20,10 @@ os.environ.setdefault("SECRET_KEY", "test")
 from backend.app.services.dashboard_service import DashboardService
 from backend.app.schemas.dashboard import DashboardCreate
 from backend.app.models.project import Project
+from backend.app.models.dashboard_topic import DashboardTopic
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from backend.app.database import Base
 
 
 class DummyMetric:
@@ -91,4 +95,17 @@ def test_generate_dashboard_without_projects():
 
     with pytest.raises(ValueError, match="No project metrics found for dashboard generation"):
         asyncio.run(service.generate_dashboard(1, dashboard_data, db))
+
+
+def test_get_topics_seeds_defaults():
+    engine = create_engine("sqlite://")
+    TestingSession = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    Base.metadata.create_all(bind=engine)
+    db = TestingSession()
+
+    service = DashboardService()
+    topics = asyncio.run(service.get_topics(db))
+
+    assert len(topics) > 0
+    assert db.query(DashboardTopic).count() == len(topics)
 

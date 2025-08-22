@@ -10,6 +10,7 @@ class DataUploadRequest(BaseModel):
 class DataUploadResponse(BaseModel):
     id: int
     file_name: Optional[str]
+    file_path: Optional[str]
     source_type: str
     status: str
     row_count: Optional[int]
