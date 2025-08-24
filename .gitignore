@@ -23,6 +23,13 @@ venv/
 *.sqlite
 *.pkl
 
+# --- EXCEPTIONS ---
+# Keep template in backend assets
+!backend/app/assets/templates/*.xlsx
+
+# Keep all fixtures (positive + negative cases)
+!fixtures/*.xlsx
+
 # Logs
 *.log
 
