@@ -10,3 +10,4 @@ from .metric import Metric
 from .integration import Integration
 from .investor import Investor
 from .audit_log import AuditLog
+from .uploads import Upload
