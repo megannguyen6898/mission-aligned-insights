@@ -11,6 +11,7 @@ from .api.routes import (
     reports_router,
     investors_router
 )
+from .routes.public.template import router as public_template_router
 
 app = FastAPI(
     title="ImpactView API",
@@ -35,6 +36,7 @@ app.include_router(integrations_router, prefix="/api/v1")
 app.include_router(dashboards_router, prefix="/api/v1")
 app.include_router(reports_router, prefix="/api/v1")
 app.include_router(investors_router, prefix="/api/v1")
+app.include_router(public_template_router)
 
 @app.get("/")
 async def root():
