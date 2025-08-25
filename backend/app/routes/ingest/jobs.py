@@ -2,12 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+import uuid
 
 from ...api.deps import get_current_user, verify_token, security
 from ...database import get_db
 from ...models.user import User
 from ...models.uploads import Upload
 from ...models.ingestion_jobs import IngestionJob, IngestionJobStatus
+from ...models.import_batches import ImportBatch, BatchStatus
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
 
@@ -41,7 +43,21 @@ def create_job(
     if upload is None:
         raise HTTPException(status_code=404, detail="Upload not found")
 
-    job = IngestionJob(org_id=org_id, upload_id=upload.id, status=IngestionJobStatus.queued)
+    batch = ImportBatch(
+        id=str(uuid.uuid4()),
+        source_system="upload",
+        triggered_by_user_id=str(current_user.id),
+        status=BatchStatus.queued,
+    )
+    db.add(batch)
+    db.flush()
+
+    job = IngestionJob(
+        org_id=org_id,
+        upload_id=upload.id,
+        import_batch_id=batch.id,
+        status=IngestionJobStatus.queued,
+    )
     db.add(job)
     db.commit()
     db.refresh(job)

@@ -1,5 +1,5 @@
 import enum
-from sqlalchemy import Column, Integer, ForeignKey, DateTime, Enum, JSON
+from sqlalchemy import Column, Integer, ForeignKey, DateTime, Enum, JSON, String
 from sqlalchemy.sql import func
 
 from ..database import Base
@@ -18,6 +18,7 @@ class IngestionJob(Base):
     id = Column(Integer, primary_key=True, index=True)
     org_id = Column(Integer, nullable=False)
     upload_id = Column(Integer, ForeignKey("uploads.id"), nullable=False)
+    import_batch_id = Column(String, ForeignKey("import_batches.id"), nullable=False)
     status = Column(
         Enum(IngestionJobStatus, name="ingestionjobstatus"),
         default=IngestionJobStatus.queued,
