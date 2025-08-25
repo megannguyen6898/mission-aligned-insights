@@ -11,3 +11,4 @@ from .integration import Integration
 from .investor import Investor
 from .audit_log import AuditLog
 from .uploads import Upload
+from .ingestion_jobs import IngestionJob
