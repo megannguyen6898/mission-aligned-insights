@@ -3,11 +3,21 @@ from fastapi.testclient import TestClient
 from jose import jwt
 import os
 import sys
+import types
+
+jinja2_stub = types.SimpleNamespace(
+    Environment=lambda *a, **k: types.SimpleNamespace(
+        get_template=lambda *a, **k: types.SimpleNamespace(render=lambda **kw: "")
+    ),
+    FileSystemLoader=lambda *a, **k: None,
+    select_autoescape=lambda *a, **k: None,
+)
+sys.modules.setdefault("jinja2", jinja2_stub)
 
 sys.path.append(str(Path(__file__).resolve().parents[3]))
 
 # Required environment variables
-os.environ["database_url"] = "sqlite:///./test.db"
+os.environ["database_url"] = "sqlite:///./test_ingest.db"
 os.environ.setdefault("jwt_secret", "test")
 os.environ.setdefault("openai_api_key", "test")
 os.environ.setdefault("xero_client_id", "test")
@@ -36,7 +46,7 @@ from backend.app.api import deps as deps_module
 from backend.app.routes.ingest import jobs as jobs_route
 
 # Reset database
-db_path = Path("test.db")
+db_path = Path("test_ingest.db")
 if db_path.exists():
     db_path.unlink()
 
@@ -72,13 +82,15 @@ jobs_route.verify_token = _fake_verify_token
 client = TestClient(app)
 
 
-def make_token(org_id=123):
+def make_token(org_id=123, roles=None):
     payload = {"sub": "2", "type": "access", "org_id": org_id}
+    if roles:
+        payload["roles"] = roles
     return jwt.encode(payload, os.environ["jwt_secret"], algorithm="HS256")
 
 
 def test_create_and_get_job():
-    token = make_token()
+    token = make_token(roles=["org_member"])
     response = client.post(
         "/ingest/jobs",
         json={"upload_id": 1},
@@ -102,8 +114,8 @@ def test_create_and_get_job():
 
 
 def test_org_scoped_visibility():
-    token1 = make_token(org_id=123)
-    token2 = make_token(org_id=999)
+    token1 = make_token(org_id=123, roles=["org_member"])
+    token2 = make_token(org_id=999, roles=["org_member"])
     response = client.post(
         "/ingest/jobs",
         json={"upload_id": 1},
@@ -118,7 +130,7 @@ def test_org_scoped_visibility():
 
 
 def test_status_and_error_returned():
-    token = make_token()
+    token = make_token(roles=["org_member"])
     response = client.post(
         "/ingest/jobs",
         json={"upload_id": 1},
@@ -138,3 +150,13 @@ def test_status_and_error_returned():
     )
     assert response.status_code == 200
     assert response.json() == {"status": "failed", "error": {"row": 1, "msg": "bad"}}
+
+
+def test_requires_org_member_role():
+    token = make_token()
+    response = client.post(
+        "/ingest/jobs",
+        json={"upload_id": 1},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 403

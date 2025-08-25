@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 import uuid
 
-from ...api.deps import get_current_user, verify_token, security
+from ...api.deps import verify_token, security
+from ...auth import require_roles, Role
 from ...database import get_db
 from ...models.user import User
 from ...models.uploads import Upload
@@ -28,7 +29,7 @@ class JobStatusResponse(BaseModel):
 @router.post("/jobs", status_code=202)
 def create_job(
     data: JobCreateRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles([Role.org_member, Role.admin])),
     creds: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
 ):
@@ -76,7 +77,7 @@ def create_job(
 @router.get("/jobs/{job_id}", response_model=JobStatusResponse)
 def get_job(
     job_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles([Role.org_member, Role.admin])),
     creds: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
 ):

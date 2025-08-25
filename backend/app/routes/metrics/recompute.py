@@ -3,7 +3,8 @@ from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-from ...api.deps import get_current_user, verify_token, security
+from ...api.deps import verify_token, security
+from ...auth import require_roles, Role
 from ...database import get_db
 from ...models.user import User
 from ...models.project import Project
@@ -19,7 +20,7 @@ class RecomputeRequest(BaseModel):
 @router.post("/metrics:recompute")
 def recompute_metrics_endpoint(
     data: RecomputeRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles([Role.org_member, Role.admin])),
     creds: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
 ):
@@ -29,7 +30,7 @@ def recompute_metrics_endpoint(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
     user_roles = getattr(current_user, "roles", [])
-    is_admin = "admin" in user_roles
+    is_admin = Role.admin.value in user_roles
 
     if data.project_id:
         project = (
