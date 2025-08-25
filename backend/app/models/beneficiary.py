@@ -16,15 +16,15 @@ from sqlalchemy.sql import func
 from ..database import Base
 
 
-class Activity(Base):
-    __tablename__ = "activities"
+class Beneficiary(Base):
+    __tablename__ = "beneficiaries"
 
     id = Column(String, primary_key=True)
     project_fk = Column(String, ForeignKey("projects.id"), nullable=False)
     date = Column(Date, nullable=True)
-    activity_type = Column(String, nullable=True)
-    activity_name = Column(String, nullable=True)
-    beneficiaries_reached = Column(Integer, nullable=True)
+    group = Column(String, nullable=True)
+    count = Column(Integer, nullable=True)
+    demographic_info = Column(String, nullable=True)
     location = Column(String, nullable=True)
     notes = Column(Text, nullable=True)
 
@@ -39,10 +39,8 @@ class Activity(Base):
     schema_version = Column(Integer, nullable=False, server_default="1")
 
     __table_args__ = (
-        UniqueConstraint(
-            "project_fk", "activity_name", "date", name="uq_activity_natural"
-        ),
+        UniqueConstraint("project_fk", "group", "date", name="uq_beneficiary_natural"),
     )
 
-    project = relationship("Project", back_populates="activities")
+    project = relationship("Project", back_populates="beneficiaries")
 

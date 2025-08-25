@@ -7,6 +7,8 @@ from .project import Project
 from .activity import Activity
 from .outcome import Outcome
 from .metric import Metric
+from .funding_resource import FundingResource
+from .beneficiary import Beneficiary
 from .integration import Integration
 from .investor import Investor
 from .audit_log import AuditLog
