@@ -3,11 +3,21 @@ from fastapi.testclient import TestClient
 from jose import jwt
 import os
 import sys
+import types
+
+jinja2_stub = types.SimpleNamespace(
+    Environment=lambda *a, **k: types.SimpleNamespace(
+        get_template=lambda *a, **k: types.SimpleNamespace(render=lambda **kw: "")
+    ),
+    FileSystemLoader=lambda *a, **k: None,
+    select_autoescape=lambda *a, **k: None,
+)
+sys.modules.setdefault("jinja2", jinja2_stub)
 
 sys.path.append(str(Path(__file__).resolve().parents[3]))
 
 # Required environment variables
-os.environ["database_url"] = "sqlite:///./test.db"
+os.environ["database_url"] = "sqlite:///./test_upload.db"
 os.environ.setdefault("jwt_secret", "test")
 os.environ.setdefault("openai_api_key", "test")
 os.environ.setdefault("xero_client_id", "test")
@@ -34,7 +44,7 @@ from backend.app.models.uploads import Upload, UploadStatus
 from backend.app.api import deps as deps_module
 from backend.app.routes.ingest import upload as upload_route
 
-db_path = Path("test.db")
+db_path = Path("test_upload.db")
 if db_path.exists():
     db_path.unlink()
 
@@ -60,13 +70,15 @@ upload_route.verify_token = _fake_verify_token
 client = TestClient(app)
 
 
-def make_token():
+def make_token(roles=None):
     payload = {"sub": "1", "type": "access", "org_id": 123}
+    if roles:
+        payload["roles"] = roles
     return jwt.encode(payload, os.environ["jwt_secret"], algorithm="HS256")
 
 
 def test_signed_url_xlsx():
-    token = make_token()
+    token = make_token(roles=["org_member"])
     body = {
         "filename": "data.xlsx",
         "mime": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -94,7 +106,7 @@ def test_signed_url_xlsx():
 
 
 def test_signed_url_csv():
-    token = make_token()
+    token = make_token(roles=["org_member"])
     body = {
         "filename": "data.csv",
         "mime": "text/csv",
@@ -109,7 +121,7 @@ def test_signed_url_csv():
 
 
 def test_signed_url_invalid_mime():
-    token = make_token()
+    token = make_token(roles=["org_member"])
     body = {
         "filename": "data.pdf",
         "mime": "application/pdf",
@@ -121,4 +133,19 @@ def test_signed_url_invalid_mime():
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 415
+
+
+def test_signed_url_requires_role():
+    token = make_token()  # no roles
+    body = {
+        "filename": "data.xlsx",
+        "mime": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "size": 1024,
+    }
+    response = client.post(
+        "/ingest/uploads:signed-url",
+        json=body,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 403
 

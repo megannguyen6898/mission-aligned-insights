@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
-from ...api.deps import get_current_user, verify_token, security
+from ...api.deps import verify_token, security
+from ...auth import require_roles, Role
 from ...database import get_db
 from ...models.user import User
 from ...models.uploads import Upload, UploadStatus
@@ -23,7 +24,7 @@ MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 @router.post("/uploads:signed-url", response_model=SignedUrlResponse)
 def create_signed_upload_url(
     data: SignedUrlRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles([Role.org_member, Role.admin])),
     creds: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
 ):

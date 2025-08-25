@@ -89,17 +89,3 @@ async def get_current_user(
 
     user.roles = payload.get("roles", [])
     return user
-
-
-def require_roles(required_roles: List[str]):
-    def role_dependency(user: User = Depends(get_current_user)):
-        user_roles = getattr(user, "roles", [])
-        if not any(role in user_roles for role in required_roles):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Insufficient permissions",
-            )
-        return user
-
-    return role_dependency
-
