@@ -8,6 +8,7 @@ from ...database import get_db
 from ...models.user import User
 from ...models.project import Project
 from ....worker.tasks.recompute_metrics import recompute_metrics as recompute_metrics_task
+from ...audit.logger import log_event
 
 router = APIRouter(tags=["metrics"])
 
@@ -40,9 +41,17 @@ def recompute_metrics_endpoint(
         if project is None:
             raise HTTPException(status_code=404, detail="Project not found")
         counts = recompute_metrics_task(org_id=str(org_id), project_id=project.id)
+        log_event(
+            db,
+            "metrics_recomputed",
+            user_id=current_user.id,
+            org_id=org_id,
+            project_id=project.id,
+        )
         return counts
     else:
         if not is_admin:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
         counts = recompute_metrics_task(org_id=str(org_id))
+        log_event(db, "metrics_recomputed", user_id=current_user.id, org_id=org_id)
         return counts

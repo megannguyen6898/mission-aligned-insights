@@ -8,6 +8,7 @@ from ..api.deps import get_current_user, verify_token, security
 from ..database import get_db
 from ..models.user import User
 from ..reports.generate import generate_pdf
+from ..audit.logger import log_event
 
 class ReportRequest(BaseModel):
     project_id: str
@@ -30,6 +31,14 @@ async def create_report(
     pdf_path = generate_pdf(data.project_id, org_id, data.sections, db)
     if not pdf_path.exists():
         raise HTTPException(status_code=500, detail="Failed to generate report")
+
+    log_event(
+        db,
+        "report_generated",
+        user_id=current_user.id,
+        org_id=org_id,
+        project_id=data.project_id,
+    )
 
     return FileResponse(
         pdf_path,
