@@ -13,3 +13,10 @@ from .audit_log import AuditLog
 from .uploads import Upload
 from .ingestion_jobs import IngestionJob
 from .import_batches import ImportBatch
+from .staging import (
+    StgProjectInfo,
+    StgActivity,
+    StgOutcome,
+    StgFundingResource,
+    StgBeneficiary,
+)
