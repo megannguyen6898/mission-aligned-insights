@@ -16,6 +16,7 @@ from .routes.ingest.upload import router as ingest_upload_router
 from .routes.ingest.jobs import router as ingest_jobs_router
 from .routes.metrics.recompute import router as metrics_recompute_router
 from .routes.dashboards.embed import router as dashboards_embed_router
+from .routes.reports import router as reports_generate_router
 
 app = FastAPI(
     title="ImpactView API",
@@ -45,6 +46,7 @@ app.include_router(ingest_upload_router)
 app.include_router(ingest_jobs_router)
 app.include_router(metrics_recompute_router)
 app.include_router(dashboards_embed_router)
+app.include_router(reports_generate_router)
 
 @app.get("/")
 async def root():
