@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body { font-family: sans-serif; }
+    .section { page-break-after: always; }
+    .section:last-child { page-break-after: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #333; padding: 4px; }
+  </style>
+</head>
+<body>
+  {% if logo_path %}
+  <div><img src="{{ logo_path }}" style="max-height:80px" /></div>
+  {% endif %}
+  <h1>{{ project.name or 'Impact Report' }}</h1>
+
+  {% if 'overview' in sections and project.summary %}
+  <div class="section">
+    <h2>Overview</h2>
+    <table>
+      <tr><th>Total Received</th><td>{{ project.summary.total_received }}</td></tr>
+      <tr><th>Total Spent</th><td>{{ project.summary.total_spent }}</td></tr>
+      <tr><th>Total Beneficiaries</th><td>{{ project.summary.total_beneficiaries }}</td></tr>
+      <tr><th>Cost per Beneficiary</th><td>{{ project.summary.cost_per_beneficiary }}</td></tr>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if 'metrics' in sections and project.metrics_summary %}
+  <div class="section">
+    <h2>Metrics</h2>
+    <table>
+      <tr><th>Metric</th><th>Total</th></tr>
+      {% for m in project.metrics_summary %}
+      <tr><td>{{ m.metric_name }}</td><td>{{ m.total_value }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+</body>
+</html>
