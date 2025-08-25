@@ -1,0 +1,47 @@
+project_info:
+  project_id: "Project ID"
+  name: "Project Name"
+  org_name: "Org Name"
+  start_date: "Start Date"
+  end_date: "End Date"
+  country: "Country"
+  region: "Region"
+  sdg_goal: "SDG Goal"
+  notes: "Notes"
+
+activities:
+  project_id: "Project ID"
+  date: "Date"
+  activity_type: "Activity Type"
+  activity_name: "Activity Name"
+  beneficiaries_reached: "Beneficiaries Reached"
+  location: "Location"
+  notes: "Notes"
+
+outcomes:
+  project_id: "Project ID"
+  date: "Date"
+  outcome_metric: "Outcome Metric"
+  value: "Value"
+  unit: "Unit"
+  method: "Method of Measurement"
+  notes: "Notes"
+
+funding_resources:
+  project_id: "Project ID"
+  date: "Date"
+  funding_source: "Funding Source"
+  received: "Funding Received"
+  spent: "Funding Spent"
+  volunteer_hours: "Volunteer Hours"
+  staff_hours: "Staff Hours"
+  notes: "Notes"
+
+beneficiaries:
+  project_id: "Project ID"
+  date: "Date"
+  group: "Beneficiary Group"
+  count: "Count"
+  demographic_info: "Demographic Info"
+  location: "Location"
+  notes: "Notes"
