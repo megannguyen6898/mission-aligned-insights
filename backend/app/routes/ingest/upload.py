@@ -10,6 +10,7 @@ from ...models.user import User
 from ...models.uploads import Upload, UploadStatus
 from ...schemas.upload import SignedUrlRequest, SignedUrlResponse
 from ...storage.s3_client import get_s3_client
+from ...audit.logger import log_event
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
 
@@ -50,6 +51,14 @@ def create_signed_upload_url(
     db.add(upload)
     db.commit()
     db.refresh(upload)
+
+    log_event(
+        db,
+        "upload_signed_url",
+        user_id=current_user.id,
+        org_id=org_id,
+        upload_id=upload.id,
+    )
 
     prefix = os.environ.get("S3_UPLOAD_PREFIX", "raw/")
     key = f"{prefix}{upload.id}/{data.filename}"

@@ -9,6 +9,7 @@ from ..auth import require_roles, Role
 from ..database import get_db
 from ..models.user import User
 from ..reports.generate import generate_pdf
+from ..audit.logger import log_event
 
 class ReportRequest(BaseModel):
     project_id: str
@@ -34,6 +35,14 @@ async def create_report(
         raise HTTPException(status_code=404, detail="Project not found")
     if not pdf_path.exists():
         raise HTTPException(status_code=500, detail="Failed to generate report")
+
+    log_event(
+        db,
+        "report_generated",
+        user_id=current_user.id,
+        org_id=org_id,
+        project_id=data.project_id,
+    )
 
     return FileResponse(
         pdf_path,

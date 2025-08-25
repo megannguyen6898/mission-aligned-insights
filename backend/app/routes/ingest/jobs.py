@@ -12,6 +12,7 @@ from ...models.uploads import Upload
 from ...models.ingestion_jobs import IngestionJob, IngestionJobStatus
 from ...models.import_batches import ImportBatch, BatchStatus
 from ...observability.events import log_event
+from ...audit.logger import log_event as log_audit_event
 from ....worker.tasks.ingest_excel_or_csv import ingest_excel_or_csv
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
@@ -64,6 +65,16 @@ def create_job(
     db.add(job)
     db.commit()
     db.refresh(job)
+
+    log_audit_event(
+        db,
+        "ingest_job_created",
+        user_id=current_user.id,
+        org_id=org_id,
+        upload_id=upload.id,
+        job_id=job.id,
+        batch_id=batch.id,
+    )
 
     try:
         ingest_excel_or_csv.delay(job.id)
