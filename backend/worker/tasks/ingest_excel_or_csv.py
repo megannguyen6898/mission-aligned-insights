@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Dict, Any
 
 from ..worker import app
+from .recompute_metrics import recompute_metrics
 
 
 @dataclass
@@ -71,6 +72,10 @@ def ingest_excel_or_csv(self, job_id: int) -> Dict[str, Any]:
             duration_ms=duration_ms,
             counts=counts.__dict__,
         )
+        try:
+            recompute_metrics.delay(org_id=str(job.org_id))
+        except Exception:
+            pass
         return {"status": "success", "duration_ms": duration_ms}
     except Exception as exc:  # pragma: no cover - exercised in tests
         db.rollback()

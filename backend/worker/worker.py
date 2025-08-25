@@ -49,4 +49,4 @@ def _on_worker_shutdown(**_):
     log_event("worker_shutdown", org_id=ORG_ID, project_id=PROJECT_ID)
 
 # Ensure tasks are registered
-from .tasks import ingest_excel_or_csv  # noqa: F401
+from .tasks import ingest_excel_or_csv, recompute_metrics  # noqa: F401
