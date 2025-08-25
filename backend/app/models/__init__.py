@@ -9,6 +9,9 @@ from .outcome import Outcome
 from .metric import Metric
 from .funding_resource import FundingResource
 from .beneficiary import Beneficiary
+from .project_summary import ProjectSummary
+from .monthly_rollup import MonthlyRollup
+from .metrics_summary import MetricsSummary
 from .integration import Integration
 from .investor import Investor
 from .audit_log import AuditLog
