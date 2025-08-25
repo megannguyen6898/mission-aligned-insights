@@ -36,6 +36,10 @@ venv/
 # Environment variables
 .env
 .env.*
+!.env.example
+!.env.local
+!.env.dev
+!.env.staging
 
 # VS Code
 .vscode/
