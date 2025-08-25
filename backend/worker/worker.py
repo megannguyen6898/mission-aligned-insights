@@ -1,6 +1,7 @@
 import os
 from celery import Celery
 from celery.signals import worker_ready, worker_shutdown
+from celery.schedules import crontab
 
 from backend.app.observability.events import log_event
 
@@ -20,6 +21,13 @@ app.conf.update(
     worker_concurrency=WORKER_CONCURRENCY,
     task_default_queue="ingest",
 )
+
+app.conf.beat_schedule = {
+    "cleanup-beneficiaries-nightly": {
+        "task": "backend.worker.tasks.cleanup_beneficiaries.cleanup_beneficiaries",
+        "schedule": crontab(minute=0, hour=0),
+    }
+}
 
 class BaseTask(app.Task):
     """Task base class with automatic retries and backoff."""
@@ -49,4 +57,4 @@ def _on_worker_shutdown(**_):
     log_event("worker_shutdown", org_id=ORG_ID, project_id=PROJECT_ID)
 
 # Ensure tasks are registered
-from .tasks import ingest_excel_or_csv, recompute_metrics  # noqa: F401
+from .tasks import ingest_excel_or_csv, recompute_metrics, cleanup_beneficiaries  # noqa: F401

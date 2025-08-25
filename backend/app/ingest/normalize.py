@@ -3,9 +3,24 @@ from __future__ import annotations
 from datetime import datetime, date
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
+import os
+import re
 from dateutil.relativedelta import relativedelta
 
 from .mapping_loader import load_mapping
+
+PII_REDACTION_ENABLED = os.getenv("PII_REDACTION_ENABLED", "false").lower() == "true"
+
+EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+PHONE_RE = re.compile(r"\+?\d[\d\s().-]{7,}\d")
+
+
+def _redact_pii(value: Any) -> Any:
+    if not isinstance(value, str):
+        return value
+    value = EMAIL_RE.sub("[REDACTED]", value)
+    value = PHONE_RE.sub("[REDACTED]", value)
+    return value
 
 
 DATE_FIELDS = {"date", "start_date", "end_date"}
@@ -109,7 +124,7 @@ def normalize_row(
             coerced = coerce_date(value)
             if coerced is None:
                 invalid_fields.append(norm_key)
-            normalized[norm_key] = coerced
+            normalized_value = coerced
         elif norm_key in NUMERIC_FIELDS:
             num = coerce_number(value)
             if num is None:
@@ -117,11 +132,15 @@ def normalize_row(
             else:
                 if norm_key in INT_FIELDS:
                     num = int(num)
-            normalized[norm_key] = num
+            normalized_value = num
         elif norm_key in CATEGORY_FIELDS:
-            normalized[norm_key] = _standardize_category(value)
+            normalized_value = _standardize_category(value)
         else:
-            normalized[norm_key] = value
+            normalized_value = value
+
+        if PII_REDACTION_ENABLED:
+            normalized_value = _redact_pii(normalized_value)
+        normalized[norm_key] = normalized_value
 
     parse_errors = {"invalid": invalid_fields} if invalid_fields else None
     return normalized, parse_errors
