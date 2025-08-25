@@ -10,6 +10,8 @@ from ...models.user import User
 from ...models.uploads import Upload
 from ...models.ingestion_jobs import IngestionJob, IngestionJobStatus
 from ...models.import_batches import ImportBatch, BatchStatus
+from ...observability.events import log_event
+from ....worker.tasks.ingest_excel_or_csv import ingest_excel_or_csv
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
 
@@ -61,6 +63,12 @@ def create_job(
     db.add(job)
     db.commit()
     db.refresh(job)
+
+    try:
+        ingest_excel_or_csv.delay(job.id)
+        log_event("ingest_job_enqueued", job_id=job.id, import_batch_id=batch.id)
+    except Exception:
+        log_event("ingest_job_enqueue_failed", job_id=job.id, import_batch_id=batch.id)
 
     return {"job_id": job.id}
 

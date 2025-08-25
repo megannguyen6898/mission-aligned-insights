@@ -2,7 +2,7 @@ import os
 from celery import Celery
 from celery.signals import worker_ready, worker_shutdown
 
-from app.observability.events import log_event
+from backend.app.observability.events import log_event
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 WORKER_CONCURRENCY = int(os.environ.get("WORKER_CONCURRENCY", "2"))
@@ -47,3 +47,6 @@ def _on_worker_ready(**_):
 @worker_shutdown.connect
 def _on_worker_shutdown(**_):
     log_event("worker_shutdown", org_id=ORG_ID, project_id=PROJECT_ID)
+
+# Ensure tasks are registered
+from .tasks import ingest_excel_or_csv  # noqa: F401
