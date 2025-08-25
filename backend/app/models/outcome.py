@@ -14,6 +14,12 @@ class Outcome(Base):
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    source_system = Column(String, nullable=False, server_default="excel")
+    external_id = Column(String, nullable=True)
+    ingested_at = Column(DateTime(timezone=True), server_default=func.now())
+    row_hash = Column(String, nullable=True)
+    import_batch_id = Column(String, ForeignKey("import_batches.id"), nullable=True)
+    schema_version = Column(Integer, nullable=False, server_default="1")
 
     activity = relationship("Activity", back_populates="outcomes")
     metrics = relationship("Metric", back_populates="outcome", cascade="all, delete-orphan")
