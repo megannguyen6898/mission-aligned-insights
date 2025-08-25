@@ -4,6 +4,7 @@ from sqlalchemy import (
     Column,
     Date,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     String,
@@ -16,16 +17,17 @@ from sqlalchemy.sql import func
 from ..database import Base
 
 
-class Activity(Base):
-    __tablename__ = "activities"
+class FundingResource(Base):
+    __tablename__ = "funding_resources"
 
     id = Column(String, primary_key=True)
     project_fk = Column(String, ForeignKey("projects.id"), nullable=False)
     date = Column(Date, nullable=True)
-    activity_type = Column(String, nullable=True)
-    activity_name = Column(String, nullable=True)
-    beneficiaries_reached = Column(Integer, nullable=True)
-    location = Column(String, nullable=True)
+    funding_source = Column(String, nullable=True)
+    received = Column(Float, nullable=True)
+    spent = Column(Float, nullable=True)
+    volunteer_hours = Column(Float, nullable=True)
+    staff_hours = Column(Float, nullable=True)
     notes = Column(Text, nullable=True)
 
     # lineage fields
@@ -40,9 +42,9 @@ class Activity(Base):
 
     __table_args__ = (
         UniqueConstraint(
-            "project_fk", "activity_name", "date", name="uq_activity_natural"
+            "project_fk", "funding_source", "date", name="uq_funding_natural"
         ),
     )
 
-    project = relationship("Project", back_populates="activities")
+    project = relationship("Project", back_populates="funding_resources")
 

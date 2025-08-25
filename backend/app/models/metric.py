@@ -9,7 +9,7 @@ class Metric(Base):
     __tablename__ = "metrics"
 
     id = Column(Integer, primary_key=True, index=True)
-    outcome_id = Column(Integer, ForeignKey("outcomes.id"), nullable=False)
+    outcome_id = Column(String, ForeignKey("outcomes.id"), nullable=False)
     name = Column(String, nullable=False)
     value = Column(Float, nullable=True)
     recorded_at = Column(DateTime(timezone=True), server_default=func.now())
