@@ -18,6 +18,7 @@ import Investors from "./pages/Investors";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import ImpactSummary from "./pages/dashboards/ImpactSummary";
+import UploadPage from "./pages/ingest/UploadPage";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="investors" element={<Investors />} />
               <Route path="settings" element={<Settings />} />
               <Route path="dashboards/impact-summary" element={<ImpactSummary />} />
+              <Route path="ingest/upload" element={<UploadPage />} />
             </Route>
             
             {/* Catch-all route */}
