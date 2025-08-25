@@ -34,7 +34,7 @@ def upgrade() -> None:
         "stg_funding_resources",
         "stg_beneficiaries",
     ]:
-        op.create_table(table, *common)
+        op.create_table(table, *common)  # type: ignore[arg-type]
 
 
 def downgrade() -> None:

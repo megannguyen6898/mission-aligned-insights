@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: mega_x
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d mega_x" --health-interval=5s --health-timeout=5s --health-retries=5
+    env:
+      database_url: postgresql://postgres:password@localhost:5432/mega_x
+      jwt_secret: test
+      openai_api_key: test
+      xero_client_id: test
+      xero_client_secret: test
+      xero_redirect_uri: http://localhost
+      google_client_id: test
+      google_client_secret: test
+      google_redirect_uri: http://localhost
+      secret_key: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          pip install -r backend/requirements.txt
+          pip install ruff mypy pytest pytest-asyncio pytest-xdist
+      - name: Lint
+        run: ruff check backend
+        continue-on-error: true
+      - name: Type check
+        run: mypy backend --ignore-missing-imports
+        continue-on-error: true
+      - name: Tests
+        run: |
+          database_url=sqlite:///./test.db pytest -n auto
+      - name: Migrations
+        run: |
+          alembic -c backend/alembic.ini upgrade head
+          alembic -c backend/alembic.ini check
