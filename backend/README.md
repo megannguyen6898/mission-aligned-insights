@@ -42,7 +42,7 @@ backend/
     database.py             # SQLAlchemy engine/session
     models/                 # SQLAlchemy models
     schemas/                # Pydantic schemas
-  alembic/                  # DB migrations
+  migrations/               # DB migrations
   Dockerfile
   docker-compose.yml        # Dev stack (db + backend)
   .env                      # ← you create this file

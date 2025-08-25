@@ -45,10 +45,10 @@ LINEAGE_COLUMNS = [
 def upgrade() -> None:
     for table in STAGING_TABLES + CORE_TABLES:
         for column in LINEAGE_COLUMNS:
-            op.add_column(table, column.copy())
+            op.add_column(table, column.copy())  # type: ignore[attr-defined]
 
 
 def downgrade() -> None:
     for table in STAGING_TABLES + CORE_TABLES:
         for column in reversed(LINEAGE_COLUMNS):
-            op.drop_column(table, column.name)
+            op.drop_column(table, column.name)  # type: ignore[attr-defined]
