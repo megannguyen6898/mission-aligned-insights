@@ -3,7 +3,7 @@ from celery import Celery
 from celery.signals import worker_ready, worker_shutdown
 from celery.schedules import crontab
 
-from backend.app.observability.events import log_event
+from app.observability.events import log_event
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 WORKER_CONCURRENCY = int(os.environ.get("WORKER_CONCURRENCY", "2"))
@@ -13,6 +13,8 @@ app = Celery(
     broker=REDIS_URL,
     backend=REDIS_URL,
 )
+
+app.autodiscover_tasks(["worker.tasks"])
 
 app.conf.update(
     task_serializer="json",

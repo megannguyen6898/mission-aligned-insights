@@ -2,8 +2,8 @@ import time
 from dataclasses import dataclass
 from typing import Dict, Any
 
-from ..worker import app
-from .recompute_metrics import recompute_metrics
+from celery import shared_task
+from worker.tasks.recompute_metrics import recompute_metrics
 
 
 @dataclass
@@ -20,7 +20,7 @@ def _close_db(db) -> None:
         pass
 
 
-@app.task(bind=True)
+@shared_task(name="ingest_excel_or_csv")
 def ingest_excel_or_csv(self, job_id: int) -> Dict[str, Any]:
     """Ingest an uploaded Excel/CSV file identified by an ingestion job."""
     from backend.app.database import SessionLocal

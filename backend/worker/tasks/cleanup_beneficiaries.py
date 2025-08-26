@@ -4,7 +4,7 @@ import os
 from datetime import datetime, timedelta
 from typing import Dict
 
-from ..worker import app
+from celery import shared_task
 
 
 def _close_db(db) -> None:
@@ -14,7 +14,7 @@ def _close_db(db) -> None:
         pass
 
 
-@app.task(bind=True)
+@shared_task(name="cleanup_beneficiaries")
 def cleanup_beneficiaries(self) -> Dict[str, int]:
     """Remove beneficiary rows older than retention window for each org."""
     from backend.app.database import SessionLocal

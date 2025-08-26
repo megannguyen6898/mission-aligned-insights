@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from ..worker import app
+from celery import shared_task
 
 
 def _close_db(db) -> None:
@@ -12,7 +12,7 @@ def _close_db(db) -> None:
         pass
 
 
-@app.task(bind=True)
+@shared_task(name="recompute_metrics")
 def recompute_metrics(self, org_id: str, project_id: str | None = None) -> Dict[str, int]:
     """Recompute summary metrics for an organization or single project."""
     from backend.app.database import SessionLocal

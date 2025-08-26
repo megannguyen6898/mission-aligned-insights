@@ -11,23 +11,55 @@ This backend serves the ImpactView app. It ships with a Docker Compose dev stack
 ## ⚡ TL;DR (Run it now)
 
 ```bash
-# from the project root or backend/ (compose file lives in backend/)
-cd backend
+# Start Docker services (from the repo root):
 
-# 1) Create .env (see sample below)
-# 2) Start DB + API (first run may build/pull images)
-docker compose up -d
+## Without MinIO:
 
-# 3) Apply database migrations
-docker compose exec backend alembic upgrade head
+docker compose up -d --build
 
-# 4) Sanity check
-curl http://localhost:8000/health
-# -> {"status":"healthy"}
+## With MinIO (if you want uploads/storage):
 
-# 5) Docker up and running
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+docker compose -f docker-compose.yml -f minio.yaml up -d --build
+
+## Check they’re up:
+
+docker compose ps
+
+## You want db, redis, backend, worker, metabase (and minio if included) all Up.
+# Health pings:
+
+curl -sS http://localhost:8000/health
+curl -sS http://localhost:3000/api/health
+
+# To debug:
+docker compose logs --tail=100 backend
+
+# Frontend (in VS Code Terminal 2):
+
+cd frontend
+npm install        # first time only
+npm run dev
 ```
+
+- Open http://localhost:5173
+. Your vite.config.ts proxy lets the UI call /api/... without extra env.
+
+- Metabase first-run (only the first time):
+
+. Go to http://localhost:3000, create admin.
+
+. Add the Postgres DB: Host db, Port 5432, User postgres, Password password, DB metabase.
+
+. (Optional) Import your NDJSON files from the metabase/ folder.
+
+- MinIO (only if you included it):
+
+. Console: http://localhost:9001
+
+. Login with MINIO_ROOT_USER / MINIO_ROOT_PASSWORD
+
+. Create bucket impactview (matches S3_BUCKET=impactview in backend/.env).
+
 
 ---
 
