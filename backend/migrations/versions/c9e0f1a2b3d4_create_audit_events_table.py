@@ -10,9 +10,9 @@ from alembic import op
 import sqlalchemy as sa
 
 revision: str = "c9e0f1a2b3d4"
-down_revision: Union[str, None] = "aa1b2c3d4e5f"
+down_revision: Union[str, None] = "00a6b13ed849"
 branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = ("0d3e31806d61", "96a0b401ae34")
 
 
 def upgrade() -> None:

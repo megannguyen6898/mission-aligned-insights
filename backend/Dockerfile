@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.11
 
 # 1) Install curl only (needed for Docker healthcheck)
 RUN apt-get update \
@@ -21,3 +21,7 @@ COPY . .
 
 # 5) Default CMD (overridden by worker in docker-compose)
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+COPY scripts ./scripts
+RUN chmod +x ./scripts/entrypoint.sh
+ENTRYPOINT ["./scripts/entrypoint.sh"]

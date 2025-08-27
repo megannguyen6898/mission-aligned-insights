@@ -42,10 +42,13 @@ services:
     env_file:
       - ./backend/.env
     environment:
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
       ALGORITHM: ${JWT_ALGORITHM:-HS256}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      JWT_REFRESH_TOKEN_EXPIRE_DAYS: ${JWT_REFRESH_TOKEN_EXPIRE_DAYS:-7}
       REFRESH_TOKEN_EXPIRE_MINUTES: ${REFRESH_TOKEN_EXPIRE_MINUTES:-10080}
       PYTHONUNBUFFERED: "1"
+      RUN_DB_MIGRATIONS: "0"
     depends_on:
       db:
         condition: service_healthy
