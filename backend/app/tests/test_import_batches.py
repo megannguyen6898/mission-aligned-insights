@@ -45,19 +45,24 @@ Base.metadata.create_all(bind=engine)
 
 # Seed user and upload
 _db = SessionLocal()
-user = User(id=2, email="user2@example.com", hashed_password="x", name="Test2")
+user = User(email="user2@example.com", hashed_password="x", name="Test2")
+_db.add(user)
+_db.commit()
+_db.refresh(user)
+user_id = user.id
 upload = Upload(
     org_id=123,
-    user_id=2,
+    user_id=user_id,
     filename="data.csv",
     mime_type="text/csv",
     size=100,
     object_key="obj",
-    status=UploadStatus.completed,
+    status=UploadStatus.validated,
 )
-_db.add_all([user, upload])
+_db.add(upload)
 _db.commit()
 _db.close()
+USER_ID = user_id
 
 
 def _fake_verify_token(token: str):
@@ -74,7 +79,7 @@ client = TestClient(app)
 
 
 def make_token(org_id=123):
-    payload = {"sub": "2", "type": "access", "org_id": org_id}
+    payload = {"sub": str(USER_ID), "type": "access", "org_id": org_id}
     return jwt.encode(payload, os.environ["jwt_secret"], algorithm="HS256")
 
 
@@ -95,7 +100,7 @@ def test_batch_created_and_lifecycle_recorded():
     batch = db.query(ImportBatch).filter(ImportBatch.id == job.import_batch_id).first()
     assert batch is not None
     assert batch.status == BatchStatus.queued
-    assert batch.triggered_by_user_id == "2"
+    assert batch.triggered_by_user_id == str(USER_ID)
     assert batch.started_at is None
     assert batch.finished_at is None
 

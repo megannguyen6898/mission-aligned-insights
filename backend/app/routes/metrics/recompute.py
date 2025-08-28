@@ -8,7 +8,7 @@ from ...auth import require_roles, Role
 from ...database import get_db
 from ...models.user import User
 from ...models.project import Project
-from worker.tasks.recompute_metrics import recompute_metrics as recompute_metrics_task
+from ....worker.tasks.recompute_metrics import recompute_metrics as recompute_metrics_task
 from ...audit.logger import log_event
 
 router = APIRouter(tags=["metrics"])
