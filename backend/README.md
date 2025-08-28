@@ -13,7 +13,9 @@ This backend serves the ImpactView app. It ships with a Docker Compose dev stack
 ```bash
 # Start Docker services (from the repo root):
 
-## Step 1: Clean old containers
+## Step 1: Clean old containers 
+
+docker compose down # to avoid removing all database
 
 docker compose down --remove-orphans
 
