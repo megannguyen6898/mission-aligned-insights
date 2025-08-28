@@ -13,7 +13,7 @@ from ...models.ingestion_jobs import IngestionJob, IngestionJobStatus
 from ...models.import_batches import ImportBatch, BatchStatus
 from ...observability.events import log_event
 from ...audit.logger import log_event as log_audit_event
-from worker.tasks.ingest_excel_or_csv import ingest_excel_or_csv
+from ....worker.tasks.ingest_excel_or_csv import ingest_excel_or_csv
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
 

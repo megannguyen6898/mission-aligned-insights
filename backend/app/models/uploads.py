@@ -7,6 +7,7 @@ from sqlalchemy import (
     ForeignKey,
     Enum,
     BigInteger,
+    JSON,
 )
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -16,9 +17,12 @@ from .user import User
 
 
 class UploadStatus(str, enum.Enum):
+    """Lifecycle states for an uploaded workbook."""
+
     pending = "pending"
-    completed = "completed"
+    validated = "validated"
     failed = "failed"
+    ingested = "ingested"
 
 
 class Upload(Base):
@@ -36,6 +40,9 @@ class Upload(Base):
         default=UploadStatus.pending,
         nullable=False,
     )
+    template_version = Column(String, nullable=False, default="v1")
+    errors_json = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     user = relationship("User")

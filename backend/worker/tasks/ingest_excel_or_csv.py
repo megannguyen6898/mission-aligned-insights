@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Dict, Any
 
 from celery import shared_task
-from worker.tasks.recompute_metrics import recompute_metrics
+from .recompute_metrics import recompute_metrics
 
 
 @dataclass

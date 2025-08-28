@@ -51,9 +51,11 @@ if db_path.exists():
 Base.metadata.create_all(bind=engine)
 
 db = SessionLocal()
-user = User(id=1, email="user@example.com", hashed_password="x", name="Test")
+user = User(email="signed@example.com", hashed_password="x", name="Test")
 db.add(user)
 db.commit()
+db.refresh(user)
+USER_ID = user.id
 db.close()
 
 
@@ -71,7 +73,7 @@ client = TestClient(app)
 
 
 def make_token(roles=None):
-    payload = {"sub": "1", "type": "access", "org_id": 123}
+    payload = {"sub": str(USER_ID), "type": "access", "org_id": 123}
     if roles:
         payload["roles"] = roles
     return jwt.encode(payload, os.environ["jwt_secret"], algorithm="HS256")
@@ -101,7 +103,7 @@ def test_signed_url_xlsx():
     assert upload.status == UploadStatus.pending
     assert upload.mime_type == body["mime"]
     assert upload.size == body["size"]
-    assert upload.user_id == 1
+    assert upload.user_id == USER_ID
     db.close()
 
 

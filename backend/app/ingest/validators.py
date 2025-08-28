@@ -7,56 +7,66 @@ import pandas as pd
 
 from .errors import SchemaValidationError
 
-# Required sheets and their corresponding required columns
+# ===== Excel template specification =====
+# Used by the uploads API and staging pipeline for validating workbook structure.
+TEMPLATE_VERSION = "v1"
+
+# Mapping of sheet name to required columns and expected Python types. Only
+# numeric columns are type-checked; all others are treated as strings.
+TEMPLATE_SHEETS: Dict[str, Dict[str, type]] = {
+    "Project Info": {
+        "Project ID": str,
+        "Project Name": str,
+        "Org Name": str,
+        "Start Date": str,
+        "End Date": str,
+        "Country": str,
+        "Region": str,
+        "SDG Goal": str,
+        "Notes": str,
+    },
+    "Activities": {
+        "Project ID": str,
+        "Date": str,
+        "Activity Type": str,
+        "Activity Name": str,
+        "Beneficiaries Reached": int,
+        "Location": str,
+        "Notes": str,
+    },
+    "Outcomes": {
+        "Project ID": str,
+        "Date": str,
+        "Outcome Metric": str,
+        "Value": float,
+        "Unit": str,
+        "Method of Measurement": str,
+        "Notes": str,
+    },
+    "Funding & Resources": {
+        "Project ID": str,
+        "Date": str,
+        "Funding Source": str,
+        "Funding Received": float,
+        "Funding Spent": float,
+        "Volunteer Hours": float,
+        "Staff Hours": float,
+        "Notes": str,
+    },
+    "Beneficiaries": {
+        "Project ID": str,
+        "Date": str,
+        "Beneficiary Group": str,
+        "Count": int,
+        "Demographic Info": str,
+        "Location": str,
+        "Notes": str,
+    },
+}
+
+# Derived mapping used by legacy validators and staging logic.
 REQUIRED_SHEETS: Dict[str, Sequence[str]] = {
-    "Project Info": [
-        "Project ID",
-        "Project Name",
-        "Org Name",
-        "Start Date",
-        "End Date",
-        "Country",
-        "Region",
-        "SDG Goal",
-        "Notes",
-    ],
-    "Activities": [
-        "Project ID",
-        "Date",
-        "Activity Type",
-        "Activity Name",
-        "Beneficiaries Reached",
-        "Location",
-        "Notes",
-    ],
-    "Outcomes": [
-        "Project ID",
-        "Date",
-        "Outcome Metric",
-        "Value",
-        "Unit",
-        "Method of Measurement",
-        "Notes",
-    ],
-    "Funding & Resources": [
-        "Project ID",
-        "Date",
-        "Funding Source",
-        "Funding Received",
-        "Funding Spent",
-        "Volunteer Hours",
-        "Staff Hours",
-        "Notes",
-    ],
-    "Beneficiaries": [
-        "Project ID",
-        "Date",
-        "Beneficiary Group",
-        "Count",
-        "Demographic Info",
-        "Location",
-        "Notes",
-    ],
+    sheet: list(cols.keys()) for sheet, cols in TEMPLATE_SHEETS.items()
 }
 
 
@@ -100,3 +110,29 @@ def validate_csv_schema(content: bytes, sheet: str) -> None:
 
     df = pd.read_csv(StringIO(content.decode("utf-8")))
     _validate_columns(df, sheet)
+
+
+def validate_template_excel(content: bytes) -> List[dict]:
+    """Validate the Excel template used for bulk data uploads.
+
+    Returns a list of error dictionaries with keys ``sheet``, ``column`` and
+    ``issue``. If the list is empty, the workbook conforms to the expected
+    schema.
+    """
+
+    errors: List[dict] = []
+    sheets = pd.read_excel(BytesIO(content), sheet_name=None)
+
+    for sheet, columns in TEMPLATE_SHEETS.items():
+        if sheet not in sheets:
+            errors.append({"sheet": sheet, "column": None, "issue": "missing_sheet"})
+            continue
+        df = sheets[sheet]
+        for col, expected in columns.items():
+            if col not in df.columns:
+                errors.append({"sheet": sheet, "column": col, "issue": "missing_column"})
+                continue
+            series = df[col]
+            if expected in (int, float) and not pd.api.types.is_numeric_dtype(series):
+                errors.append({"sheet": sheet, "column": col, "issue": "invalid_type"})
+    return errors
