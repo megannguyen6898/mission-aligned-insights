@@ -44,7 +44,7 @@ class Settings(BaseSettings):
 
     # Metabase (backend may or may not use these)
     MB_SITE_URL: Optional[str] = Field(None, alias="MB_SITE_URL")
-    MB_ENCRYPTION_SECRET: Optional[str] = Field(None, alias="MB_ENCRYPTION_SECRET")
+    MB_ENCRYPTION_SECRET_KEY: Optional[str] = Field(None, alias="MB_ENCRYPTION_SECRET_KEY")
 
     # Storage (MinIO / S3)
     STORAGE_PROVIDER: Optional[str] = Field(None, alias="STORAGE_PROVIDER")
@@ -132,8 +132,8 @@ class Settings(BaseSettings):
         return self.MB_SITE_URL
 
     @property
-    def mb_encryption_secret(self) -> Optional[str]:
-        return self.MB_ENCRYPTION_SECRET
+    def mb_encryption_secret_key(self) -> Optional[str]:
+        return self.MB_ENCRYPTION_SECRET_KEY
 
     # Storage
     @property

@@ -13,7 +13,11 @@ This backend serves the ImpactView app. It ships with a Docker Compose dev stack
 ```bash
 # Start Docker services (from the repo root):
 
-## Without MinIO:
+## Step 1: Clean old containers
+
+docker compose down --remove-orphans
+
+## Step 2: Without MinIO:
 
 docker compose up -d --build
 
@@ -44,13 +48,38 @@ npm run dev
 - Open http://localhost:5173
 . Your vite.config.ts proxy lets the UI call /api/... without extra env.
 
-- Metabase first-run (only the first time):
+- Step 3: Metabase first-run (only the first time):
 
-. Go to http://localhost:3000, create admin.
+. In browser, go to http://localhost:3000 and complete the setup wizard:
 
-. Add the Postgres DB: Host db, Port 5432, User postgres, Password password, DB metabase.
+. Add database → Postgres
 
-. (Optional) Import your NDJSON files from the metabase/ folder.
+Name: Mission Aligned DB
+
+Host: db
+
+Port: 5432
+
+Database: mega_x (from POSTGRES_DB)
+
+Username: postgres (from POSTGRES_USER)
+
+Password: password (from POSTGRES_PASSWORD)
+
+SSL: off
+
+. After finishing the wizard (schema sync starts automatically), enable embedding:
+
+Settings (gear) → Admin → Settings → Embedding
+
+. Toggle Enable embedding on
+
+. Copy the Embedding secret
+
+. Update .env:
+
+MB_ENCRYPTION_SECRET=<copied secret>
+MB_SITE_URL=http://localhost:3000
 
 - MinIO (only if you included it):
 

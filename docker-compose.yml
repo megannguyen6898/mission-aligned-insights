@@ -102,7 +102,7 @@ services:
       MB_DB_USER: postgres
       MB_DB_PASS: password
       MB_SITE_URL: ${MB_SITE_URL}
-      MB_ENCRYPTION_SECRET: ${MB_ENCRYPTION_SECRET_KEY}
+      MB_ENCRYPTION_SECRET_KEY: ${MB_ENCRYPTION_SECRET_KEY}
     volumes:
       - metabase_data:/metabase-data
     depends_on:
