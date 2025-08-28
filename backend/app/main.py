@@ -4,11 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .api.routes import (
     auth_router,
-    users_router, 
+    users_router,
     data_router,
     integrations_router,
     dashboards_router,
     reports_router,
+    report_templates_router,
     investors_router
 )
 from .routes.public.template import router as public_template_router
@@ -44,6 +45,7 @@ app.include_router(data_router, prefix="/api/v1")
 app.include_router(integrations_router, prefix="/api/v1")
 app.include_router(dashboards_router, prefix="/api/v1")
 app.include_router(reports_router, prefix="/api/v1")
+app.include_router(report_templates_router, prefix="/api/v1")
 app.include_router(investors_router, prefix="/api/v1")
 app.include_router(public_template_router)
 app.include_router(ingest_upload_router)
