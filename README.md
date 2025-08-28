@@ -93,6 +93,20 @@ docker-compose up --build # If image hasn't been built
 uvicorn app.main:app --reload
 ```
 
+### Manual E2E test
+
+1. Start backend services: `docker-compose up` (from repository root).
+2. Run the frontend dev server:
+   ```sh
+   cd frontend
+   npm install
+   npm run dev
+   ```
+3. Sign up and log in through the app.
+4. Navigate to **Upload** and choose an Excel file. The UI will show statuses for upload, validate, and ingest.
+5. After ingestion, open **Dashboard**. A list of dashboards loads and the selected one is embedded via Metabase.
+6. Open **Reports**, choose a template, generate a report, wait for status `ready`, then download the file.
+
 ## Security
 
 See [SECURITY.md](SECURITY.md) for details on encryption, authentication, audit logging, and data retention.

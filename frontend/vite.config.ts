@@ -14,10 +14,15 @@ export default defineConfig(({ mode }) => {
       port: 8080,
       proxy: {
         "/api": {
-          target: proxyTarget,              // ✅ use the env-driven target
+          target: proxyTarget, // ✅ use the env-driven target
           changeOrigin: true,
           secure: false,
-          rewrite: (p) => p.replace(/^\/api/, "/api/v1"), // map /api → /api/v1
+          rewrite: (p) =>
+            p.startsWith("/api/uploads") ||
+            p.startsWith("/api/dashboards") ||
+            p.startsWith("/api/metabase")
+              ? p
+              : p.replace(/^\/api/, "/api/v1"),
         },
       },
     },

@@ -4,7 +4,7 @@ import { toast } from "@/hooks/use-toast";
 // All requests go to /api, which Vite proxies to your backend /api/v1
 export const api = axios.create({
   baseURL: "/api",
-  // withCredentials: true, // only if you use cookie/session auth
+  withCredentials: true,
 });
 
 let accessToken: string | null = null;
