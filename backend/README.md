@@ -81,6 +81,24 @@ Settings (gear) → Admin → Settings → Embedding
 MB_ENCRYPTION_SECRET=<copied secret>
 MB_SITE_URL=http://localhost:3000
 
+. skip the manual dashboard‑creation steps
+
+```
+docker cp metabase/seed/cards.ndjson mission-aligned-insights-metabase-1:/tmp/cards.ndjson
+docker cp metabase/seed/collections.ndjson mission-aligned-insights-metabase-1:/tmp/collections.ndjson
+```
+
+```
+docker exec -w /app mission-aligned-insights-metabase-1 java -jar metabase.jar import collections.ndjson
+docker exec -w /app mission-aligned-insights-metabase-1 java -jar metabase.jar import cards.ndjson
+```
+
+. restart Metabase
+```
+docker compose restart metabase
+docker compose restart backend
+```
+
 - MinIO (only if you included it):
 
 . Console: http://localhost:9001
