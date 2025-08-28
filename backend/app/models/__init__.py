@@ -25,3 +25,4 @@ from .staging import (
     StgFundingResource,
     StgBeneficiary,
 )
+from .activity_outcome_fact import ActivityOutcomeFact
