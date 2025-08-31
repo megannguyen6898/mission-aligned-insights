@@ -48,7 +48,8 @@ services:
       JWT_REFRESH_TOKEN_EXPIRE_DAYS: ${JWT_REFRESH_TOKEN_EXPIRE_DAYS:-7}
       REFRESH_TOKEN_EXPIRE_MINUTES: ${REFRESH_TOKEN_EXPIRE_MINUTES:-10080}
       PYTHONUNBUFFERED: "1"
-      RUN_DB_MIGRATIONS: "0"
+      PYTHONPATH: /app
+      RUN_DB_MIGRATIONS: "1"
     depends_on:
       db:
         condition: service_healthy
@@ -76,6 +77,7 @@ services:
       WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-2}
       PYTHONUNBUFFERED: "1"
       PYTHONPATH: /app
+      RUN_DB_MIGRATIONS: "1"
     depends_on:
       redis:
         condition: service_healthy

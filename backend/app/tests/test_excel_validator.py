@@ -9,7 +9,7 @@ import pytest
 # Configure environment for importing
 sys.path.append(str(Path(__file__).resolve().parents[3]))
 os.environ.setdefault("database_url", "sqlite://")
-os.environ.setdefault("jwt_secret", "test")
+os.environ.setdefault("jwt_secret_key", "test")
 os.environ.setdefault("secret_key", "test")
 
 from backend.app.ingest.validators import (

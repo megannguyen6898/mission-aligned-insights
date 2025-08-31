@@ -10,7 +10,7 @@ os.environ["database_url"] = "sqlite:///./test.db"
 _db_path = Path("test.db")
 if _db_path.exists():
     _db_path.unlink()
-os.environ.setdefault("jwt_secret", "test")
+os.environ.setdefault("jwt_secret_key", "test")
 os.environ.setdefault("openai_api_key", "test")
 os.environ.setdefault("xero_client_id", "test")
 os.environ.setdefault("xero_client_secret", "test")

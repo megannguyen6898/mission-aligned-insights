@@ -16,8 +16,12 @@ class Settings(BaseSettings):
     DATABASE_URL: str = Field(..., alias="DATABASE_URL")
     DATABASE_SSL_MODE: str = Field("prefer", alias="DATABASE_SSL_MODE")
 
+    # Auth0 JWTs
+    AUTH0_DOMAIN: Optional[str] = Field(None, alias="AUTH0_DOMAIN")
+    AUTH0_AUDIENCE: Optional[str] = Field(None, alias="AUTH0_AUDIENCE")
+
     # JWT
-    JWT_SECRET: str = Field(..., alias="JWT_SECRET")
+    JWT_SECRET_KEY: str = Field(..., alias="JWT_SECRET_KEY")
     JWT_ALGORITHM: str = Field("HS256", alias="JWT_ALGORITHM")
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(30, alias="JWT_ACCESS_TOKEN_EXPIRE_MINUTES")
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = Field(7, alias="JWT_REFRESH_TOKEN_EXPIRE_DAYS")
@@ -71,10 +75,19 @@ class Settings(BaseSettings):
     def database_ssl_mode(self) -> str:
         return self.DATABASE_SSL_MODE
 
+    # Auth0 JWT
+    @property
+    def auth0_domain(self) -> Optional[str]:
+        return self.AUTH0_DOMAIN
+
+    @property
+    def auth0_audience(self) -> Optional[str]:
+        return self.AUTH0_AUDIENCE
+        
     # JWT
     @property
-    def jwt_secret(self) -> str:
-        return self.JWT_SECRET
+    def jwt_secret_key(self) -> str:
+        return self.JWT_SECRET_KEY
 
     @property
     def jwt_algorithm(self) -> str:

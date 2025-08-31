@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 # Setup environment variables
 os.environ["DATABASE_URL"] = "sqlite://"
-os.environ.setdefault("JWT_SECRET", "test")
+os.environ.setdefault("JWT_SECRET_KEY", "test")
 os.environ.setdefault("SECRET_KEY", "test")
 os.environ.setdefault("OPENAI_API_KEY", "test")
 os.environ.setdefault("XERO_CLIENT_ID", "test")
@@ -84,7 +84,7 @@ def setup_function(_):
 
     def _fake_verify(token: str):
         try:
-            return jwt.decode(token, os.environ["JWT_SECRET"], algorithms=["HS256"])
+            return jwt.decode(token, os.environ["JWT_SECRET_KEY"], algorithms=["HS256"])
         except Exception:
             return None
 
@@ -93,7 +93,7 @@ def setup_function(_):
 
 def make_token(org_id="org1"):
     payload = {"sub": "1", "type": "access", "org_id": org_id}
-    return jwt.encode(payload, os.environ["JWT_SECRET"], algorithm="HS256")
+    return jwt.encode(payload, os.environ["JWT_SECRET_KEY"], algorithm="HS256")
 
 
 def test_template_upload_and_report_generation():

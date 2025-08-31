@@ -19,7 +19,7 @@ sys.path.append(str(Path(__file__).resolve().parents[3]))
 
 # Required environment variables
 os.environ["database_url"] = "sqlite:///./test_metrics.db"
-os.environ.setdefault("jwt_secret", "test")
+os.environ.setdefault("jwt_secret_key", "test")
 os.environ.setdefault("openai_api_key", "test")
 os.environ.setdefault("xero_client_id", "test")
 os.environ.setdefault("xero_client_secret", "test")
@@ -119,7 +119,7 @@ client = TestClient(app)
 
 def _fake_verify_token(token: str):
     try:
-        return jwt.decode(token, os.environ["jwt_secret"], algorithms=["HS256"])
+        return jwt.decode(token, os.environ["jwt_secret_key"], algorithms=["HS256"])
     except Exception:
         return None
 
@@ -132,7 +132,7 @@ def make_token(org_id="org1", roles=None):
     payload = {"sub": "1", "type": "access", "org_id": org_id}
     if roles:
         payload["roles"] = roles
-    return jwt.encode(payload, os.environ["jwt_secret"], algorithm="HS256")
+    return jwt.encode(payload, os.environ["jwt_secret_key"], algorithm="HS256")
 
 
 def test_recompute_requires_admin_for_org():

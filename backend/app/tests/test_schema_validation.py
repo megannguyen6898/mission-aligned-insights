@@ -10,7 +10,7 @@ import pytest
 # Add project root to path and set minimal env vars
 sys.path.append(str(Path(__file__).resolve().parents[3]))
 os.environ.setdefault("database_url", "sqlite://")
-os.environ.setdefault("jwt_secret", "test")
+os.environ.setdefault("jwt_secret_key", "test")
 os.environ.setdefault("openai_api_key", "test")
 os.environ.setdefault("xero_client_id", "test")
 os.environ.setdefault("xero_client_secret", "test")

@@ -11,7 +11,7 @@ sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 
 def test_cleanup_beneficiaries(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "sqlite://")
-    monkeypatch.setenv("JWT_SECRET", "test")
+    monkeypatch.setenv("JWT_SECRET_KEY", "test")
     monkeypatch.setenv("SECRET_KEY", "test")
     monkeypatch.setenv("OPENAI_API_KEY", "test")
     monkeypatch.setenv("XERO_CLIENT_ID", "test")

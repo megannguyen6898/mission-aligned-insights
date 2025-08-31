@@ -118,7 +118,7 @@ async def create_report_job(
     db.refresh(job)
 
     try:
-        from ...worker.tasks.render_report import render_report_job
+        from worker.tasks.render_report import render_report_job
 
         render_report_job.delay(job.id)
     except Exception:

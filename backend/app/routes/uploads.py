@@ -16,7 +16,7 @@ from ..models.import_batches import ImportBatch, BatchStatus
 from ..storage.s3_client import get_s3_client
 from ..ingest.validators import validate_template_excel, TEMPLATE_VERSION
 from ..schemas.upload import UploadCreateResponse, UploadStatusResponse
-from ...worker.tasks.ingest_excel_or_csv import ingest_excel_or_csv
+from worker.tasks.ingest_excel_or_csv import ingest_excel_or_csv
 
 router = APIRouter(prefix="/api/uploads", tags=["uploads"])
 

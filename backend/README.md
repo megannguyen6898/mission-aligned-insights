@@ -25,13 +25,14 @@ docker compose up -d --build
 
 ## With MinIO (if you want uploads/storage):
 
-docker compose -f docker-compose.yml -f minio.yaml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.minio.yml up -d --build
 
 ## Check they’re up:
 
 docker compose ps
 
-## You want db, redis, backend, worker, metabase (and minio if included) all Up.
+### You want db, redis, backend, worker, metabase (and minio if included) all Up.
+
 # Health pings:
 
 curl -sS http://localhost:8000/health
@@ -39,6 +40,22 @@ curl -sS http://localhost:3000/api/health
 
 # To debug:
 docker compose logs --tail=100 backend
+
+## Whenever you hit "multiple heads”, do the merge + upgrade once 
+
+docker compose -f docker-compose.yml -f docker-compose.minio.yml run --rm backend bash -lc "alembic merge heads -m 'merge all heads'"
+docker compose -f docker-compose.yml -f docker-compose.minio.yml run --rm backend bash -lc "alembic upgrade head"
+
+### Then commit the merge migration.
+
+## If Postgres data dir is empty, db-init folder will auto-run. If the data dir has been initialized (existing cluster), the folder is ignored on startup. If there is any change to the folder, run
+
+# confirm the file is mounted
+docker compose exec db ls -l /docker-entrypoint-initdb.d
+
+# run it once
+docker compose exec -T db psql -U postgres -f /docker-entrypoint-initdb.d/01-create-dbs.sql
+
 
 # Frontend (in VS Code Terminal 2):
 
@@ -141,7 +158,7 @@ DATABASE_URL=postgresql://postgres:password@db:5432/mega_x
 DATABASE_SSL_MODE=prefer
 
 # --- JWT/Auth (provide both naming styles to satisfy helpers) ---
-JWT_SECRET=replace-with-long-random-hex
+JWT_SECRET_KEY=replace-with-long-random-hex
 JWT_ALGORITHM=HS256
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES=60
 JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
@@ -333,7 +350,7 @@ docker compose exec db psql -U postgres -d mega_x -c "\dt"
   ```bash
   docker compose exec backend python - <<'PY'
   import os
-  print("JWT_SECRET set:", bool(os.getenv("JWT_SECRET")))
+  print("JWT_SECRET_KEY set:", bool(os.getenv("JWT_SECRET_KEY")))
   print("SECRET_KEY set:", bool(os.getenv("SECRET_KEY")))
   print("ALGORITHM:", os.getenv("ALGORITHM"))
   print("ACCESS_TOKEN_EXPIRE_MINUTES:", os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))

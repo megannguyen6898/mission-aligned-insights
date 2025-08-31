@@ -13,7 +13,7 @@ def setup_function(_):
     if db_path.exists():
         db_path.unlink()
     os.environ["database_url"] = "sqlite:///./analytics_test.db"
-    os.environ.setdefault("jwt_secret", "test")
+    os.environ.setdefault("jwt_secret_key", "test")
     os.environ.setdefault("secret_key", "test")
     os.environ.setdefault("MB_SITE_URL", "http://mb.local")
     os.environ.setdefault("MB_ENCRYPTION_SECRET", "a" * 32)

@@ -7,7 +7,7 @@ import asyncio
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 
 os.environ.setdefault("DATABASE_URL", "sqlite://")
-os.environ.setdefault("JWT_SECRET", "test")
+os.environ.setdefault("JWT_SECRET_KEY", "test")
 os.environ.setdefault("OPENAI_API_KEY", "test")
 os.environ.setdefault("XERO_CLIENT_ID", "test")
 os.environ.setdefault("XERO_CLIENT_SECRET", "test")

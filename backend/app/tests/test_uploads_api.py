@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 
 # Setup environment
 os.environ.setdefault("database_url", "sqlite:///./uploads_api.db")
-os.environ.setdefault("jwt_secret", "test")
+os.environ.setdefault("jwt_secret_key", "test")
 os.environ.setdefault("secret_key", "test")
 os.environ.setdefault("openai_api_key", "test")
 os.environ.setdefault("xero_client_id", "test")
@@ -37,7 +37,7 @@ object.__setattr__(deps_module.settings, "auth0_domain", "test")
 object.__setattr__(deps_module.settings, "auth0_audience", "test")
 def _fake_verify_token(token: str):
     try:
-        return jwt.decode(token, os.environ["jwt_secret"], algorithms=["HS256"])
+        return jwt.decode(token, os.environ["jwt_secret_key"], algorithms=["HS256"])
     except Exception:
         return None
 deps_module.verify_token = _fake_verify_token
@@ -85,7 +85,7 @@ client = TestClient(app)
 
 def make_token():
     payload = {"sub": str(USER_ID), "type": "access", "org_id": 123, "roles": ["org_member"]}
-    return jwt.encode(payload, os.environ["jwt_secret"], algorithm="HS256")
+    return jwt.encode(payload, os.environ["jwt_secret_key"], algorithm="HS256")
 
 
 def _build_valid_workbook():

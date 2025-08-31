@@ -8,7 +8,7 @@ sys.path.append(str(Path(__file__).resolve().parents[3]))
 
 # Required environment variables
 os.environ["database_url"] = "sqlite:///./test.db"
-os.environ.setdefault("jwt_secret", "test")
+os.environ.setdefault("jwt_secret_key", "test")
 os.environ.setdefault("openai_api_key", "test")
 os.environ.setdefault("xero_client_id", "test")
 os.environ.setdefault("xero_client_secret", "test")
@@ -67,7 +67,7 @@ USER_ID = user_id
 
 def _fake_verify_token(token: str):
     try:
-        return jwt.decode(token, os.environ["jwt_secret"], algorithms=["HS256"])
+        return jwt.decode(token, os.environ["jwt_secret_key"], algorithms=["HS256"])
     except Exception:
         return None
 
@@ -80,7 +80,7 @@ client = TestClient(app)
 
 def make_token(org_id=123):
     payload = {"sub": str(USER_ID), "type": "access", "org_id": org_id}
-    return jwt.encode(payload, os.environ["jwt_secret"], algorithm="HS256")
+    return jwt.encode(payload, os.environ["jwt_secret_key"], algorithm="HS256")
 
 
 def test_batch_created_and_lifecycle_recorded():
