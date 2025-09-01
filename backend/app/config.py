@@ -83,7 +83,11 @@ class Settings(BaseSettings):
     @property
     def auth0_audience(self) -> Optional[str]:
         return self.AUTH0_AUDIENCE
-        
+
+    @property
+    def secret_key(self) -> str:
+        return self.SECRET_KEY
+            
     # JWT
     @property
     def jwt_secret_key(self) -> str:
