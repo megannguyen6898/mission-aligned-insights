@@ -105,6 +105,9 @@ services:
       MB_DB_PASS: password
       MB_SITE_URL: ${MB_SITE_URL}
       MB_ENCRYPTION_SECRET_KEY: ${MB_ENCRYPTION_SECRET_KEY}
+      MB_EMBED_SECRET_KEY: ${MB_EMBED_SECRET_KEY}
+      MB_DASHBOARD_DEFAULT_DASHBOARD_ID: ${MB_DASHBOARD_ID}
+      
     volumes:
       - metabase_data:/metabase-data
     depends_on:

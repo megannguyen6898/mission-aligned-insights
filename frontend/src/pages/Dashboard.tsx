@@ -76,7 +76,7 @@ const Dashboard: React.FC = () => {
       {embedUrl && (
         <iframe
           src={embedUrl}
-          className="w-full h-[600px] border rounded"
+          className="w-full h-[85vh] border rounded"
           allowFullScreen
         />
       )}
