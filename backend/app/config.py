@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     AUTH0_DOMAIN: Optional[str] = Field(None, alias="AUTH0_DOMAIN")
     AUTH0_AUDIENCE: Optional[str] = Field(None, alias="AUTH0_AUDIENCE")
 
+    # Firebase
+    FIREBASE_PROJECT_ID: Optional[str] = Field(None, alias="FIREBASE_PROJECT_ID")
+
     # JWT
     JWT_SECRET_KEY: str = Field(..., alias="JWT_SECRET_KEY")
     JWT_ALGORITHM: str = Field("HS256", alias="JWT_ALGORITHM")
@@ -84,6 +87,11 @@ class Settings(BaseSettings):
     def auth0_audience(self) -> Optional[str]:
         return self.AUTH0_AUDIENCE
 
+    # Firebase
+    @property
+    def firebase_project_id(self) -> Optional[str]:
+        return self.FIREBASE_PROJECT_ID
+        
     @property
     def secret_key(self) -> str:
         return self.SECRET_KEY

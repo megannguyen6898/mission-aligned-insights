@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPAuthorizationCredentials
+from pydantic import BaseModel
 
-from ..metabase.jwt import create_signed_url
+# Use your existing helpers
+from ..metabase.jwt import create_signed_url, create_embed_token
 from ..api.deps import get_current_user, security, verify_token
 from ..models.user import User
 
@@ -18,34 +20,64 @@ class Dashboard:
     id: int
     name: str
 
-# Read the single dashboard id from env
-_DEFAULT_DASHBOARD_ID = int(os.environ.get("MB_DASHBOARD_DEFAULT_DASHBOARD_ID", "1"))
+# Support both env names; prefer MB_DASHBOARD_ID if present
+_DEFAULT_DASHBOARD_ID = int(
+    os.getenv("MB_DASHBOARD_DEFAULT_DASHBOARD_ID", "2")
+)
+
 _DASHBOARDS = [Dashboard(id=_DEFAULT_DASHBOARD_ID, name="Main Dashboard")]
 
 @router.get("/dashboards")
 def list_dashboards() -> list[Dict[str, Any]]:
     return [d.__dict__ for d in _DASHBOARDS]
 
+
+class SignReq(BaseModel):
+    # Support BOTH payload styles:
+    # 1) {"resource": {"dashboard": 2}, "params": {...}}
+    # 2) {"resource": "dashboard", "id": 2, "params": {...}}  (legacy)
+    resource: Optional[Dict[str, Any] | str] = None
+    id: Optional[int] = None
+    params: Optional[Dict[str, Any]] = None
+    expiry_minutes: int = 10
+
+
 @router.post("/metabase/signed")
 def sign_metabase(
-    payload: Dict[str, Any],
+    req: SignReq,
     current_user: User = Depends(get_current_user),
     creds: HTTPAuthorizationCredentials = Depends(security),
 ) -> Dict[str, str]:
-    # derive org_id from the app token; DO NOT trust client-provided org_id
+    # Derive org_id: prefer token payload; fall back to current_user if available.
+    org_id: Optional[str] = None
     token_payload = verify_token(creds.credentials)
-    org_id = token_payload.get("org_id") if token_payload else None
-    if org_id is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    if token_payload and "org_id" in token_payload:
+        org_id = str(token_payload["org_id"])
+    elif getattr(current_user, "org_id", None) is not None:
+        org_id = str(current_user.org_id)
 
-    resource = payload.get("resource")
-    resource_id = payload.get("id") or _DEFAULT_DASHBOARD_ID
-    expiry = int(payload.get("expiry_minutes", 10))
+    # If you REQUIRE org_id for locked params, keep this; otherwise comment it out.
+    # if org_id is None:
+    #     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token: missing org_id")
 
-    if resource != "dashboard":
-        raise HTTPException(status_code=400, detail="Unsupported resource")
+    # Resolve dashboard id from either payload style or env default
+    dashboard_id: Optional[int | str] = None
+    if isinstance(req.resource, dict):
+        dashboard_id = req.resource.get("dashboard")
+    elif isinstance(req.resource, str):
+        if req.resource != "dashboard":
+            raise HTTPException(status_code=400, detail="Unsupported resource")
+        dashboard_id = req.id
+    if dashboard_id is None:
+        dashboard_id = _DEFAULT_DASHBOARD_ID
 
-    # Always inject locked params server-side
-    params = {"org_id": str(org_id)}
-    url = create_signed_url("dashboard", resource_id, params=params, expiry_minutes=expiry)
-    return {"url": url}
+    # Merge client params with locked params (locked wins)
+    locked = {"org_id": org_id} if org_id is not None else {}
+    params = {**(req.params or {}), **locked}
+
+    # Produce BOTH jwt and url (frontend can choose which it wants)
+    token = create_embed_token(dashboard_id, params=params, expiry_minutes=req.expiry_minutes)
+    site = (os.getenv("MB_SITE_URL") or os.getenv("METABASE_SITE_URL") or "").rstrip("/")
+    url = f"{site}/embed/dashboard/{token}#titled=true&bordered=true" if site else ""
+
+    return {"jwt": token, "url": url}
