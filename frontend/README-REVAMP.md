@@ -68,7 +68,8 @@ npm run dev
 - Semantic HTML structure
 
 ## Next Steps
-- Implement Spaces tree component
-- Add File Preview drawer
-- Connect AI drawer to actual AI service
-- Add responsive mobile layouts
+- [x] Implement Spaces tree component for navigating organizations → programs → datasets
+- [x] Add File Preview drawer with quick metadata and text previews
+- [x] Connect AI drawer to the mission-aligned AI service endpoint
+- [x] Add responsive mobile and tablet layouts for the application shell
+- Continue collecting feedback from program teams to refine data taxonomy and AI prompts

@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { Upload as UploadIcon, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Upload as UploadIcon, FileText, CheckCircle2, AlertCircle, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface UploadStep {
@@ -17,6 +17,7 @@ interface UploadPanelProps {
   errors?: string[];
   uploadedFiles?: File[];
   isUploading?: boolean;
+  onPreviewFile?: (file: File) => void;
 }
 
 export const UploadPanel: React.FC<UploadPanelProps> = ({
@@ -25,6 +26,7 @@ export const UploadPanel: React.FC<UploadPanelProps> = ({
   errors = [],
   uploadedFiles = [],
   isUploading = false,
+  onPreviewFile,
 }) => {
   const [dragActive, setDragActive] = useState(false);
 
@@ -148,13 +150,28 @@ export const UploadPanel: React.FC<UploadPanelProps> = ({
               {uploadedFiles.map((file, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-accent border border-border"
+                  className="flex items-center gap-3 rounded-xl border border-border bg-accent p-3"
                 >
                   <FileText className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium text-foreground flex-1">
-                    {file.name}
-                  </span>
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <div className="flex-1 space-y-1">
+                    <p className="text-sm font-medium text-foreground">{file.name}</p>
+                    <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {onPreviewFile && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="bg-background text-foreground"
+                        onClick={() => onPreviewFile(file)}
+                      >
+                        <Eye className="mr-1 h-4 w-4" />
+                        Preview
+                      </Button>
+                    )}
+                    <CheckCircle2 className="h-4 w-4 text-primary" aria-hidden />
+                  </div>
                 </div>
               ))}
             </div>
@@ -164,3 +181,11 @@ export const UploadPanel: React.FC<UploadPanelProps> = ({
     </Card>
   );
 };
+
+function formatFileSize(bytes: number) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / Math.pow(1024, exponent);
+  return `${value >= 10 ? Math.round(value) : value.toFixed(1)} ${units[exponent]}`;
+}

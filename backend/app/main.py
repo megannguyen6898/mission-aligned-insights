@@ -10,7 +10,8 @@ from .api.routes import (
     dashboards_router,
     reports_router,
     report_templates_router,
-    investors_router
+    investors_router,
+    ai_router
 )
 from .routes.public.template import router as public_template_router
 from .routes.ingest.upload import router as ingest_upload_router
@@ -47,6 +48,7 @@ app.include_router(dashboards_router, prefix="/api/v1")
 app.include_router(reports_router, prefix="/api/v1")
 app.include_router(report_templates_router, prefix="/api/v1")
 app.include_router(investors_router, prefix="/api/v1")
+app.include_router(ai_router, prefix="/api/v1")
 app.include_router(public_template_router)
 app.include_router(ingest_upload_router)
 app.include_router(ingest_jobs_router)

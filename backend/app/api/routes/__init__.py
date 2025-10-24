@@ -6,6 +6,7 @@ from .integrations import router as integrations_router
 from .dashboards import router as dashboards_router
 from .reports import router as reports_router, templates_router as report_templates_router
 from .investors import router as investors_router
+from .ai import router as ai_router
 
 __all__ = [
     "auth_router",
@@ -15,5 +16,6 @@ __all__ = [
     "dashboards_router",
     "reports_router",
     "report_templates_router",
-    "investors_router"
+    "investors_router",
+    "ai_router",
 ]

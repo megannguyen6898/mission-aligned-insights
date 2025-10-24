@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { UploadPanel } from "@/components/upload/UploadPanel";
 import { useToast } from "@/hooks/use-toast";
 import { uploadFile, validateUpload, ingestUpload } from "@/api/uploads";
+import { FilePreviewDrawer } from "@/components/upload/FilePreviewDrawer";
 
 interface Step {
   name: string;
@@ -12,6 +13,8 @@ interface Step {
 const Upload: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [steps, setSteps] = useState<Step[]>([
     { name: "Upload", status: "idle" },
     { name: "Validate", status: "idle" },
@@ -75,6 +78,21 @@ const Upload: React.FC = () => {
         errors={errors}
         uploadedFiles={uploadedFiles}
         isUploading={isUploading}
+        onPreviewFile={(file) => {
+          setPreviewFile(file);
+          setIsPreviewOpen(true);
+        }}
+      />
+
+      <FilePreviewDrawer
+        file={previewFile}
+        open={isPreviewOpen}
+        onOpenChange={(open) => {
+          setIsPreviewOpen(open);
+          if (!open) {
+            setPreviewFile(null);
+          }
+        }}
       />
     </div>
   );
