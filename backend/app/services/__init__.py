@@ -7,6 +7,7 @@ from .report_service import ReportService
 from .integration_service import IntegrationService
 from .investor_service import InvestorService
 from .analytics_service import AnalyticsService
+from .ai_service import AIService
 
 __all__ = [
     "AuthService",
@@ -17,4 +18,5 @@ __all__ = [
     "IntegrationService",
     "InvestorService",
     "AnalyticsService",
+    "AIService",
 ]
