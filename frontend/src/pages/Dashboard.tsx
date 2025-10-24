@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { KpiCard } from "@/components/common/KpiCard";
 import { listDashboards, getSignedDashboard } from "@/api/metabase";
 import { Link } from "react-router-dom";
+import { Users, TrendingUp, Target, DollarSign } from "lucide-react";
 
 interface DashboardInfo {
   id: number;
@@ -44,41 +47,87 @@ const Dashboard: React.FC = () => {
 
   if (dashboards.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>No dashboards available</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-2">Upload some data to see your metrics.</p>
-          <Link to="/upload" className="text-blue-600 underline">
-            Go to Upload
-          </Link>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard</h1>
+          <p className="text-lg text-muted-foreground">View your impact metrics and insights</p>
+        </div>
+        <Card className="soft-shadow-lg border-border/50 rounded-2xl">
+          <CardHeader>
+            <CardTitle>No dashboards available</CardTitle>
+            <CardDescription>Upload some data to start seeing your impact metrics</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="bg-primary hover:bg-primary/90">
+              <Link to="/upload">
+                Go to Upload
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-      <Select value={selected?.toString()} onValueChange={(v) => setSelected(Number(v))}>
-        <SelectTrigger className="w-[250px]">
-          <SelectValue placeholder="Select dashboard" />
-        </SelectTrigger>
-        <SelectContent>
-          {dashboards.map((d) => (
-            <SelectItem key={d.id} value={d.id.toString()}>
-              {d.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      {embedUrl && (
-        <iframe
-          src={embedUrl}
-          className="w-full h-[85vh] border rounded"
-          allowFullScreen
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard</h1>
+          <p className="text-lg text-muted-foreground">Track your organization's impact in real-time</p>
+        </div>
+        <Select value={selected?.toString()} onValueChange={(v) => setSelected(Number(v))}>
+          <SelectTrigger className="w-[280px] soft-shadow">
+            <SelectValue placeholder="Select dashboard" />
+          </SelectTrigger>
+          <SelectContent className="bg-popover">
+            {dashboards.map((d) => (
+              <SelectItem key={d.id} value={d.id.toString()}>
+                {d.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <KpiCard
+          title="Lives Impacted"
+          value="2,547"
+          trend={{ direction: 'up', value: '+12% from last month' }}
+          icon={<Users className="h-5 w-5" />}
         />
+        <KpiCard
+          title="Programs Active"
+          value="23"
+          trend={{ direction: 'up', value: '+3 this quarter' }}
+          icon={<Target className="h-5 w-5" />}
+        />
+        <KpiCard
+          title="SDG Alignment"
+          value="89%"
+          trend={{ direction: 'neutral', value: 'Stable' }}
+          icon={<TrendingUp className="h-5 w-5" />}
+        />
+        <KpiCard
+          title="Social ROI"
+          value="$4.2M"
+          trend={{ direction: 'up', value: '+18% this year' }}
+          icon={<DollarSign className="h-5 w-5" />}
+        />
+      </div>
+
+      {/* Embedded Dashboard */}
+      {embedUrl && (
+        <Card className="soft-shadow-lg border-border/50 rounded-2xl overflow-hidden">
+          <iframe
+            src={embedUrl}
+            className="w-full h-[70vh]"
+            allowFullScreen
+          />
+        </Card>
       )}
     </div>
   );

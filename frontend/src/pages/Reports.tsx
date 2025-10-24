@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ReportTabs } from "@/components/report/ReportTabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   listReportTemplates,
@@ -9,6 +10,7 @@ import {
   getReportStatus,
   downloadReport,
 } from "@/api/reports";
+import { FileText, Loader2 } from "lucide-react";
 
 interface Template {
   id: number;
@@ -82,38 +84,82 @@ const Reports: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Reports</h1>
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-4xl font-bold text-foreground mb-2">Impact Reports</h1>
+        <p className="text-lg text-muted-foreground">
+          Generate comprehensive impact reports for your stakeholders
+        </p>
+      </div>
 
-      <Card>
+      {/* Report Generator Card */}
+      <Card className="soft-shadow-lg border-border/50 rounded-2xl">
         <CardHeader>
-          <CardTitle>Generate Report</CardTitle>
-          <CardDescription>Select a template and generate a report</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            Generate New Report
+          </CardTitle>
+          <CardDescription>Select a template and generate a custom report</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Select value={selected?.toString()} onValueChange={(v) => setSelected(Number(v))}>
-            <SelectTrigger className="w-[300px]">
-              <SelectValue placeholder="Select template" />
-            </SelectTrigger>
-            <SelectContent>
-              {templates.map((t) => (
-                <SelectItem key={t.id} value={t.id.toString()}>
-                  {t.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button onClick={generate} disabled={!selected || status === "queued"}>
-            Generate Report
-          </Button>
-          {status && <p className="text-sm">Status: {status}</p>}
+          <div className="flex items-center gap-4 flex-wrap">
+            <Select 
+              value={selected?.toString()} 
+              onValueChange={(v) => setSelected(Number(v))}
+              disabled={status === "queued"}
+            >
+              <SelectTrigger className="w-[320px]">
+                <SelectValue placeholder="Select report template" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover">
+                {templates.map((t) => (
+                  <SelectItem key={t.id} value={t.id.toString()}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button 
+              onClick={generate} 
+              disabled={!selected || status === "queued"}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {status === "queued" ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                'Generate Report'
+              )}
+            </Button>
+          </div>
+          
+          {status && status !== "idle" && (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Status:</span>
+              <span className="font-medium text-foreground capitalize">{status}</span>
+            </div>
+          )}
+          
           {status === "ready" && (
-            <Button onClick={download} variant="outline">
-              Download
+            <Button onClick={download} variant="outline" className="border-primary text-primary">
+              Download Report
             </Button>
           )}
         </CardContent>
       </Card>
+
+      {/* Report Tabs */}
+      <ReportTabs
+        onExportPDF={() => {
+          toast({ title: "Exporting PDF...", description: "Your report will download shortly" });
+        }}
+        onExportExcel={() => {
+          toast({ title: "Exporting Excel...", description: "Your data will download shortly" });
+        }}
+      />
     </div>
   );
 };
