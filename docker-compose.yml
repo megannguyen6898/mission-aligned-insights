@@ -90,36 +90,5 @@ services:
       retries: 5
     restart: unless-stopped
 
-  metabase:
-    image: metabase/metabase:latest
-    ports:
-      - "3000:3000"
-    env_file:
-      - ./backend/.env
-    environment:
-      MB_DB_TYPE: postgres
-      MB_DB_DBNAME: metabase
-      MB_DB_HOST: db         
-      MB_DB_PORT: "5432"
-      MB_DB_USER: postgres
-      MB_DB_PASS: password
-      MB_SITE_URL: ${MB_SITE_URL}
-      MB_ENCRYPTION_SECRET_KEY: ${MB_ENCRYPTION_SECRET_KEY}
-      MB_EMBED_SECRET_KEY: ${MB_EMBED_SECRET_KEY}
-      MB_DASHBOARD_DEFAULT_DASHBOARD_ID: ${MB_DASHBOARD_DEFAULT_DASHBOARD_ID}
-      
-    volumes:
-      - metabase_data:/metabase-data
-    depends_on:
-      db:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    restart: unless-stopped
-
 volumes:
   postgres_data:
-  metabase_data:

@@ -2,7 +2,6 @@ import time
 from dataclasses import dataclass
 from typing import Dict, Any
 import os
-import time
 from tempfile import NamedTemporaryFile
 
 from celery import shared_task
@@ -36,7 +35,6 @@ def ingest_excel_or_csv(self, job_id: int) -> Dict[str, Any]:
     from backend.app.ingest.parse_and_stage import parse_and_stage
     from backend.app.ingest.load_to_core import load_to_core
     from backend.app.services.analytics_service import AnalyticsService
-    from backend.app.metabase.api import sync_schema
     from backend.app.storage.s3_client import get_s3_client
 
     start_time = time.time()
@@ -92,12 +90,6 @@ def ingest_excel_or_csv(self, job_id: int) -> Dict[str, Any]:
         # refresh facts -----------------------------------------------------
         service = AnalyticsService()
         service.refresh_facts(db)
-
-        # best-effort Metabase sync ----------------------------------------
-        try:
-            sync_schema()
-        except Exception:
-            pass
 
         job.status = IngestionJobStatus.success
         if batch is not None:

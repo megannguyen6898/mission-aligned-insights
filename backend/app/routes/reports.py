@@ -1,5 +1,7 @@
+from typing import Any, Dict, Literal, Optional
+
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -8,12 +10,18 @@ from ..api.deps import verify_token, security
 from ..auth import require_roles, Role
 from ..database import get_db
 from ..models.user import User
-from ..reports.generate import generate_pdf
+from ..reports.generate import generate_pdf, render_space_report
 from ..audit.logger import log_event
 
 class ReportRequest(BaseModel):
     project_id: str
     sections: list[str]
+
+
+class SpaceReportRequest(BaseModel):
+    space_id: str
+    template: Literal["sdg", "ops", "sroi"]
+    inputs: Optional[Dict[str, Any]] = None
 
 router = APIRouter(tags=["reports"])
 
@@ -48,4 +56,22 @@ async def create_report(
         pdf_path,
         media_type="application/pdf",
         filename=pdf_path.name,
+    )
+
+
+@router.post("/report/render")
+def render_report(
+    data: SpaceReportRequest,
+    db: Session = Depends(get_db),
+):
+    try:
+        pdf_bytes = render_space_report(db, data.space_id, data.template, data.inputs)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    filename = f"{data.space_id}-{data.template}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )

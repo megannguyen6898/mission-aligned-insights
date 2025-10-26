@@ -46,6 +46,7 @@ const initialMappings: MappingRow[] = [
 const Mapping: React.FC = () => {
   const [rows, setRows] = useState<MappingRow[]>(initialMappings);
   const [advancedMode, setAdvancedMode] = useState(false);
+  const [aiAssistEnabled, setAiAssistEnabled] = useState(true);
 
   const readyToConfirm = useMemo(() => {
     return rows.every((row) => {
@@ -74,6 +75,20 @@ const Mapping: React.FC = () => {
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
+          <div className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-muted/30 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-foreground">AI Assist suggestions</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Toggle to use heuristic recommendations for column mappings.
+              </p>
+            </div>
+            <Switch
+              checked={aiAssistEnabled}
+              onCheckedChange={setAiAssistEnabled}
+              aria-label="AI Assist toggle"
+            />
+          </div>
+
           <Card className="rounded-2xl border-border/60 bg-card soft-shadow">
             <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="space-y-1">
@@ -97,6 +112,7 @@ const Mapping: React.FC = () => {
                     )
                   )
                 }
+                aiEnabled={aiAssistEnabled}
               />
 
               <div className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-muted/30 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -135,7 +151,11 @@ const Mapping: React.FC = () => {
           <Card className="rounded-2xl border-border/60 bg-card/90 soft-shadow">
             <CardHeader>
               <CardTitle className="text-base font-semibold text-foreground">AI mapping summary</CardTitle>
-              <CardDescription>Everything looks consistent with your prior uploads.</CardDescription>
+              <CardDescription>
+                {aiAssistEnabled
+                  ? "Everything looks consistent with your prior uploads."
+                  : "AI Assist is off. Review saved mappings before continuing."}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-sm leading-relaxed text-muted-foreground">
               <p>

@@ -29,7 +29,8 @@ export default defineConfig(async ({ mode }) => {
           rewrite: (p) =>
             p.startsWith("/api/uploads") ||
             p.startsWith("/api/dashboards") ||
-            p.startsWith("/api/metabase")
+            p.startsWith("/api/analytics") ||
+            p.startsWith("/api/report")
               ? p
               : p.replace(/^\/api/, "/api/v1"),
         },

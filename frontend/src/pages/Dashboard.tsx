@@ -1,168 +1,244 @@
-import React from "react";
+import React, { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { KpiCard } from "@/components/common/KpiCard";
 import { AINarrativeCard } from "@/components/dashboard/AINarrativeCard";
 import { ChartBlock } from "@/components/charts/ChartBlock";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Users, Target, TrendingUp, DollarSign, Download, FileBarChart, ArrowRight } from "lucide-react";
+import { getKpis, getSeries, Kpi, Series } from "@/lib/apiClient";
+import { useAuth } from "@/contexts/AuthContext";
+import { Download, FileBarChart } from "lucide-react";
 
-const kpis = [
-  {
-    title: "Lives impacted",
-    value: "2,547",
-    trend: { direction: "up" as const, value: "+12% vs last month" },
-    icon: <Users className="h-5 w-5" />,
-  },
-  {
-    title: "Programs active",
-    value: "23",
-    trend: { direction: "up" as const, value: "+3 this quarter" },
-    icon: <Target className="h-5 w-5" />,
-  },
-  {
-    title: "SDG alignment",
-    value: "89%",
-    trend: { direction: "neutral" as const, value: "Holding steady" },
-    icon: <TrendingUp className="h-5 w-5" />,
-  },
-  {
-    title: "Social ROI",
-    value: "$4.2M",
-    trend: { direction: "up" as const, value: "+18% YoY" },
-    icon: <DollarSign className="h-5 w-5" />,
-  },
-];
+const palette = ["#06B6D4", "#FBBF24", "#0EA5E9", "#22D3EE", "#64748B", "#34D399"];
 
-const impactByRegion = [
-  { label: "East Africa", value: 62 },
-  { label: "South Asia", value: 48 },
-  { label: "Latin America", value: 37 },
-  { label: "Europe", value: 28 },
-];
+type TrendDirection = "up" | "down" | "neutral";
 
-const sdgHighlights = [
-  {
-    title: "SDG 4 • Quality Education",
-    narrative:
-      "Coaching support and coding bootcamps increased completion rates to 92%. AI flagged strong upward momentum for young women in Nairobi.",
-  },
-  {
-    title: "SDG 8 • Decent Work",
-    narrative:
-      "Microfinance pilot created 180 new jobs in the last quarter. Loan repayment rates remain above 95% across cohorts.",
-  },
-  {
-    title: "SDG 13 • Climate Action",
-    narrative:
-      "Climate innovation fund backed 14 new ventures. Carbon reduction estimates are trending ahead of target by 9%.",
-  },
-];
+const keyForLabel = (label: string) => label.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+
+const formatKpiValue = (kpi: Kpi) => {
+  if (kpi.unit === "ratio") {
+    return `${(kpi.value * 100).toFixed(1)}%`;
+  }
+  if (kpi.unit === "score") {
+    return kpi.value.toFixed(1);
+  }
+  const formatter = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+  return formatter.format(kpi.value);
+};
+
+const trendForDelta = (delta: number): { direction: TrendDirection; label: string } => {
+  if (delta > 0.005) {
+    return { direction: "up", label: `+${(delta * 100).toFixed(1)}% vs prior period` };
+  }
+  if (delta < -0.005) {
+    return { direction: "down", label: `${(delta * 100).toFixed(1)}% vs prior period` };
+  }
+  return { direction: "neutral", label: "No material change" };
+};
+
+const buildNarrative = (kpis: Kpi[]): string => {
+  if (!kpis.length) {
+    return "Upload data to unlock KPI narratives and chart-based insights.";
+  }
+  const ordered = [...kpis].sort((a, b) => (b.value || 0) - (a.value || 0));
+  const focus = ordered[0];
+  const trend = trendForDelta(focus.delta);
+  const change = trend.direction === "neutral" ? "held steady" : trend.direction === "up" ? "increased" : "decreased";
+  const changePct = trend.direction === "neutral" ? "" : ` (${(Math.abs(focus.delta) * 100).toFixed(1)}%)`;
+  return `${focus.label} reached ${formatKpiValue(focus)} ${focus.unit !== "ratio" ? focus.unit : ""}${changePct} and overall performance ${change}.`;
+};
+
+const transformSeries = (series?: Series[]) => {
+  if (!series || !series.length) {
+    return { data: [], keys: [] as { key: string; label: string; color: string }[] };
+  }
+  const rows = new Map<string, Record<string, number | string>>();
+  const keys: { key: string; label: string; color: string }[] = [];
+
+  series.forEach((serie, index) => {
+    const key = keyForLabel(serie.label) || `series_${index}`;
+    keys.push({ key, label: serie.label, color: palette[index % palette.length] });
+    serie.points.forEach((point) => {
+      const bucket = String(point.x);
+      const existing = rows.get(bucket) ?? { x: bucket };
+      existing[key] = point.y;
+      rows.set(bucket, existing);
+    });
+  });
+
+  const sorted = Array.from(rows.values()).sort((a, b) => {
+    const ax = a.x as string;
+    const bx = b.x as string;
+    const axNum = Number(ax);
+    const bxNum = Number(bx);
+    if (!Number.isNaN(axNum) && !Number.isNaN(bxNum)) {
+      return axNum - bxNum;
+    }
+    return ax.localeCompare(bx);
+  });
+
+  return { data: sorted, keys };
+};
 
 const Dashboard: React.FC = () => {
+  const { user } = useAuth();
+  const spaceId = user?.organization_name || "org1";
+
+  const { data: kpiData } = useQuery({
+    queryKey: ["analytics", "kpis", spaceId],
+    queryFn: () => getKpis(spaceId),
+    enabled: Boolean(spaceId),
+  });
+
+  const { data: timeSeriesData } = useQuery({
+    queryKey: ["analytics", "series", spaceId, "year"],
+    queryFn: () => getSeries(spaceId, "beneficiaries,completions", { group_by: "year" }),
+    enabled: Boolean(spaceId),
+  });
+
+  const { data: regionSeriesData } = useQuery({
+    queryKey: ["analytics", "series", spaceId, "region"],
+    queryFn: () => getSeries(spaceId, "beneficiaries", { group_by: "region" }),
+    enabled: Boolean(spaceId),
+  });
+
+  const kpis = useMemo(() => kpiData?.kpis ?? [], [kpiData]);
+  const narrative = useMemo(() => buildNarrative(kpis), [kpis]);
+  const { data: lineData, keys: lineKeys } = useMemo(() => transformSeries(timeSeriesData?.series), [timeSeriesData]);
+  const regionData = useMemo(() => {
+    const first = regionSeriesData?.series?.[0];
+    if (!first) return [];
+    return first.points.map((point, idx) => ({
+      name: String(point.x),
+      value: point.y,
+      color: palette[idx % palette.length],
+    }));
+  }, [regionSeriesData]);
+
   return (
     <div className="space-y-10">
       <PageHeader
         title="Impact intelligence"
-        description="Review your most important outcomes, AI narratives, and ready-to-share insights. Everything ties back to the lineage established during mapping."
+        description="Review dynamic KPIs, AI-ready narratives, and ready-to-export insights—all powered by first-party analytics."
         actions={
           <div className="flex items-center gap-3">
             <Button variant="outline" size="sm" className="rounded-full border-primary/40 text-primary">
               <Download className="mr-2 h-4 w-4" />
               Export CSV
             </Button>
-            <Button size="sm" className="rounded-full bg-primary px-5">
-              <FileBarChart className="mr-2 h-4 w-4" />
-              Generate report
+            <Button size="sm" className="rounded-full bg-primary px-5" asChild>
+              <Link to="/reports">
+                <FileBarChart className="mr-2 h-4 w-4" /> Generate report
+              </Link>
             </Button>
           </div>
         }
       />
 
       <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        {kpis.map((kpi) => (
-          <KpiCard key={kpi.title} {...kpi} className="rounded-2xl bg-card/95" />
-        ))}
+        {kpis.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No KPI data available yet.</p>
+        ) : (
+          kpis.map((kpi, idx) => {
+            const trend = trendForDelta(kpi.delta);
+            return (
+              <KpiCard
+                key={`${kpi.label}-${idx}`}
+                title={kpi.label}
+                value={formatKpiValue(kpi)}
+                trend={{ direction: trend.direction, value: trend.label }}
+              />
+            );
+          })
+        )}
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-8">
-          <AINarrativeCard
-            narrative="Youth-focused programs reached 2,547 beneficiaries with a 12% month-over-month uplift. The biggest contributor was the Nairobi Skills Hub, adding 410 participants and maintaining a 92% graduation rate. Drop-off remains lowest where mentorship was embedded from week two."
-            highlights={["Skills Hub ↑ 18%", "Attrition 4%", "Equity lens maintained"]}
-          />
+          <AINarrativeCard narrative={narrative} highlights={kpis.slice(0, 3).map((kpi) => `${kpi.label}: ${formatKpiValue(kpi)}`)} />
 
           <ChartBlock
-            title="Impact distribution by region"
-            description="Categorised by unique beneficiaries across active programs. Target confidence ≥ 0.8 for comparison readiness."
+            title="Impact over time"
+            description="Aggregated beneficiaries and completions grouped by year."
           >
-            <div className="space-y-4">
-              {impactByRegion.map((region) => (
-                <div key={region.label} className="space-y-2">
-                  <div className="flex items-center justify-between text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    <span>{region.label}</span>
-                    <span>{region.value}%</span>
-                  </div>
-                  <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{ width: `${Math.max(10, region.value)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="mt-6 text-xs text-muted-foreground leading-relaxed">
-              AI summary: East Africa remains the growth engine, while Latin America shows steady gains after the curriculum refresh.
-            </p>
+            {lineData.length === 0 ? (
+              <p className="py-6 text-sm text-muted-foreground">No time-series data available yet.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={320}>
+                <LineChart data={lineData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="x" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  {lineKeys.map(({ key, label, color }) => (
+                    <Line key={key} type="monotone" dataKey={key} name={label} stroke={color} strokeWidth={2} dot={{ r: 3 }} />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </ChartBlock>
         </div>
 
         <div className="space-y-6">
-          <Card className="rounded-2xl border-border/60 bg-card soft-shadow">
-            <CardHeader>
-              <CardTitle className="text-base font-semibold text-foreground">Data quality & lineage</CardTitle>
-              <CardDescription className="text-sm leading-relaxed text-muted-foreground">
-                Mapping approvals synced 3 days ago. No validation issues detected in the last ingest cycle.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm leading-relaxed text-muted-foreground">
-              <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground/80">
-                  Traceability
-                </p>
-                <p className="mt-2 text-xs leading-relaxed">
-                  KPI cards reference Upload Batch #21 • Mapping version 3.2 • Report template “Annual Board.”
-                </p>
-              </div>
-              <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-xs text-primary">
-                <Badge variant="secondary" className="rounded-full bg-primary text-primary-foreground">
-                  98% coverage
-                </Badge>
-                Required dimensions are populated. Continue collecting socio-economic impact disaggregation.
-              </div>
-              <Button variant="ghost" className="group inline-flex w-full items-center justify-start gap-2 px-0 text-sm text-primary hover:text-primary">
-                Review data lineage
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </CardContent>
-          </Card>
+          <ChartBlock
+            title="Impact by region"
+            description="Breakdown of beneficiaries across active regions."
+          >
+            {regionData.length === 0 ? (
+              <p className="py-6 text-sm text-muted-foreground">No regional data mapped yet.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={regionData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value">
+                    {regionData.map((entry, idx) => (
+                      <Cell key={`cell-${entry.name}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </ChartBlock>
 
-          <Card className="rounded-2xl border-border/60 bg-card soft-shadow">
-            <CardHeader>
-              <CardTitle className="text-base font-semibold text-foreground">SDG insights</CardTitle>
-              <CardDescription>See which global goals your programs are driving forward.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {sdgHighlights.map(({ title, narrative }) => (
-                <div key={title} className="space-y-2 rounded-2xl border border-border/50 bg-muted/40 p-4">
-                  <p className="text-sm font-semibold text-foreground">{title}</p>
-                  <p className="text-xs leading-relaxed text-muted-foreground">{narrative}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+          <ChartBlock
+            title="Share of impact"
+            description="Quick composition snapshot using the same regional data."
+          >
+            {regionData.length === 0 ? (
+              <p className="py-6 text-sm text-muted-foreground">Awaiting data uploads.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Tooltip />
+                  <Pie data={regionData} dataKey="value" nameKey="name" innerRadius={60} outerRadius={100} paddingAngle={4}>
+                    {regionData.map((entry) => (
+                      <Cell key={`slice-${entry.name}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </ChartBlock>
         </div>
       </div>
     </div>

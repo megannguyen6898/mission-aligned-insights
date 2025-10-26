@@ -5,12 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ReportTabs } from "@/components/report/ReportTabs";
 import { useToast } from "@/hooks/use-toast";
-import {
-  listReportTemplates,
-  createReport,
-  getReportStatus,
-  downloadReport,
-} from "@/api/reports";
+import { listReportTemplates } from "@/api/reports";
+import { renderReport } from "@/lib/apiClient";
+import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Sparkles, FileBarChart, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 
@@ -23,9 +20,10 @@ interface Template {
 const Reports: React.FC = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selected, setSelected] = useState<number | undefined>();
-  const [reportId, setReportId] = useState<number | null>(null);
-  const [status, setStatus] = useState<string>("");
+  const [isRendering, setIsRendering] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const spaceId = user?.organization_name || "org1";
 
   useEffect(() => {
     async function load() {
@@ -39,59 +37,36 @@ const Reports: React.FC = () => {
     load();
   }, []);
 
-  useEffect(() => {
-    if (!reportId) return;
-    const interval = setInterval(async () => {
-      const { data } = await getReportStatus(reportId);
-      setStatus(data.status);
-      if (data.status === "ready" || data.status === "failed") {
-        clearInterval(interval);
-      }
-    }, 1200);
-    return () => clearInterval(interval);
-  }, [reportId]);
-
   const activeTemplate = useMemo(
     () => templates.find((template) => template.id === selected),
     [templates, selected]
   );
 
   const generate = async () => {
-    if (!selected) return;
-    setStatus("queued");
+    if (!selected || !activeTemplate) return;
+    setIsRendering(true);
     try {
-      const { data } = await createReport(selected);
-      setReportId(data.report_id);
-      toast({ title: "Report queued", description: "We’ll notify you when it’s ready." });
-    } catch (err) {
-      console.error("Report generation failed", err);
-      toast({
-        title: "Report failed",
-        description: "Could not start report generation.",
-        variant: "destructive",
+      const blob = await renderReport(spaceId, (activeTemplate?.name?.toLowerCase().includes("ops") ? "ops" : activeTemplate?.name?.toLowerCase().includes("sroi") ? "sroi" : "sdg") as "sdg" | "ops" | "sroi", {
+        prepared_by: user?.name,
+        template_name: activeTemplate?.name,
       });
-      setStatus("");
-    }
-  };
-
-  const download = async () => {
-    if (!reportId) return;
-    try {
-      const res = await downloadReport(reportId);
-      const blob = new Blob([res.data], { type: res.headers["content-type"] });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `impact-report-${reportId}.pdf`;
+      const slug = activeTemplate?.name?.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "impact-report";
+      a.download = `${slug}.pdf`;
       a.click();
       window.URL.revokeObjectURL(url);
+      toast({ title: "Report ready", description: "Downloaded the latest PDF." });
     } catch (err) {
-      console.error("Download failed", err);
+      console.error("Report rendering failed", err);
       toast({
-        title: "Download failed",
-        description: "Please try again or regenerate the report.",
+        title: "Report failed",
+        description: "We couldn’t render the PDF. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsRendering(false);
     }
   };
 
@@ -100,13 +75,7 @@ const Reports: React.FC = () => {
       <PageHeader
         title="Impact reporting studio"
         description="Build multi-level narratives for boards, programme teams, and investors. All reports trace back to trusted mappings and AI narrative cards."
-        actions={
-          reportId && status === "ready" ? (
-            <Button onClick={download} size="sm" className="rounded-full bg-primary px-5">
-              Download latest
-            </Button>
-          ) : null
-        }
+        actions={null}
       />
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
@@ -159,13 +128,13 @@ const Reports: React.FC = () => {
             <div className="flex flex-wrap items-center gap-3">
               <Button
                 onClick={generate}
-                disabled={!selected || status === "queued"}
+                disabled={!selected || isRendering}
                 className="rounded-full bg-primary px-5"
               >
-                {status === "queued" ? (
+                {isRendering ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating…
+                    Rendering…
                   </>
                 ) : (
                   <>
@@ -176,19 +145,11 @@ const Reports: React.FC = () => {
               </Button>
               <Button
                 variant="outline"
-                disabled={status === "queued"}
+                disabled={isRendering}
                 className="rounded-full border-primary/40 text-primary"
               >
                 Preview structure
               </Button>
-              {status && (
-                <Badge
-                  variant="outline"
-                  className={status === "failed" ? "border-destructive/40 text-destructive" : "border-primary/40 text-primary"}
-                >
-                  Status: {status}
-                </Badge>
-              )}
             </div>
           </CardContent>
         </Card>

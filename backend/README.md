@@ -31,12 +31,11 @@ docker compose -f docker-compose.yml -f docker-compose.minio.yml up -d --build
 
 docker compose ps
 
-### You want db, redis, backend, worker, metabase (and minio if included) all Up.
+### You want db, redis, backend, worker (and minio if included) all Up.
 
 # Health pings:
 
 curl -sS http://localhost:8000/health
-curl -sS http://localhost:3000/api/health
 
 # To debug:
 docker compose logs --tail=100 backend
@@ -66,57 +65,6 @@ npm run dev
 
 - Open http://localhost:5173
 . Your vite.config.ts proxy lets the UI call /api/... without extra env.
-
-- Step 3: Metabase first-run (only the first time):
-
-. In browser, go to http://localhost:3000 and complete the setup wizard:
-
-. Add database → Postgres
-
-Name: Mission Aligned DB
-
-Host: db
-
-Port: 5432
-
-Database: mega_x (from POSTGRES_DB)
-
-Username: postgres (from POSTGRES_USER)
-
-Password: password (from POSTGRES_PASSWORD)
-
-SSL: off
-
-. After finishing the wizard (schema sync starts automatically), enable embedding:
-
-Settings (gear) → Admin → Settings → Embedding
-
-. Toggle Enable embedding on
-
-. Copy the Embedding secret
-
-. Update .env:
-
-MB_ENCRYPTION_SECRET=<copied secret>
-MB_SITE_URL=http://localhost:3000
-
-. skip the manual dashboard‑creation steps
-
-```
-docker cp metabase/seed/cards.ndjson mission-aligned-insights-metabase-1:/tmp/cards.ndjson
-docker cp metabase/seed/collections.ndjson mission-aligned-insights-metabase-1:/tmp/collections.ndjson
-```
-
-```
-docker exec -w /app mission-aligned-insights-metabase-1 java -jar metabase.jar import collections.ndjson
-docker exec -w /app mission-aligned-insights-metabase-1 java -jar metabase.jar import cards.ndjson
-```
-
-. restart Metabase
-```
-docker compose restart metabase
-docker compose restart backend
-```
 
 - MinIO (only if you included it):
 

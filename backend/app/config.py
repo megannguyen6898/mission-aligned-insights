@@ -49,10 +49,6 @@ class Settings(BaseSettings):
     REDIS_URL: str = Field("redis://redis:6379/0", alias="REDIS_URL")
     WORKER_CONCURRENCY: int = Field(2, alias="WORKER_CONCURRENCY")
 
-    # Metabase (backend may or may not use these)
-    MB_SITE_URL: Optional[str] = Field(None, alias="MB_SITE_URL")
-    MB_ENCRYPTION_SECRET_KEY: Optional[str] = Field(None, alias="MB_ENCRYPTION_SECRET_KEY")
-
     # Storage (MinIO / S3)
     STORAGE_PROVIDER: Optional[str] = Field(None, alias="STORAGE_PROVIDER")
     S3_BUCKET: Optional[str] = Field(None, alias="S3_BUCKET")
@@ -150,15 +146,6 @@ class Settings(BaseSettings):
     @property
     def worker_concurrency(self) -> int:
         return self.WORKER_CONCURRENCY
-
-    # Metabase
-    @property
-    def mb_site_url(self) -> Optional[str]:
-        return self.MB_SITE_URL
-
-    @property
-    def mb_encryption_secret_key(self) -> Optional[str]:
-        return self.MB_ENCRYPTION_SECRET_KEY
 
     # Storage
     @property

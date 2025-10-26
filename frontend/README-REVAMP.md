@@ -15,6 +15,8 @@ npm run dev
 npm run test
 ```
 
+The dashboard now calls first-party FastAPI analytics (`/api/analytics/*`) and requests PDF renders via `/report/render`; no Metabase setup required.
+
 ## Design Tokens
 
 ### Colors

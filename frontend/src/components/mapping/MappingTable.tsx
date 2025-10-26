@@ -23,12 +23,14 @@ interface MappingTableProps {
   mappings: MappingRow[];
   onMappingChange?: (sourceColumn: string, newMapping: string) => void;
   standardColumns?: string[];
+  aiEnabled?: boolean;
 }
 
 export const MappingTable: React.FC<MappingTableProps> = ({
   mappings,
   onMappingChange,
   standardColumns = ['Beneficiaries Served', 'Program Name', 'Date', 'Location', 'Outcome'],
+  aiEnabled = true,
 }) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -45,11 +47,13 @@ export const MappingTable: React.FC<MappingTableProps> = ({
     <Card className="soft-shadow-lg border-border/50 rounded-2xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
-          Data Mapping
+          <Sparkles className={cn('h-5 w-5', aiEnabled ? 'text-primary' : 'text-muted-foreground')} />
+          {aiEnabled ? 'AI-assisted Mapping' : 'Manual Mapping'}
         </CardTitle>
         <CardDescription>
-          We think these columns match. Confirm or edit the mappings below.
+          {aiEnabled
+            ? 'We think these columns match. Confirm or edit the mappings below.'
+            : 'AI Assist is off. Map each column manually to continue.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -83,13 +87,17 @@ export const MappingTable: React.FC<MappingTableProps> = ({
                   </td>
                   <td className="px-4 py-4">
                     <Select
-                      value={mapping.currentMapping || mapping.suggestedMapping}
+                      value={
+                        (aiEnabled
+                          ? mapping.currentMapping || mapping.suggestedMapping
+                          : mapping.currentMapping || mapping.suggestedMapping) ?? undefined
+                      }
                       onValueChange={(value) =>
                         onMappingChange?.(mapping.sourceColumn, value)
                       }
                     >
                       <SelectTrigger className="w-full rounded-xl border-border/60">
-                        <SelectValue />
+                        <SelectValue placeholder={aiEnabled ? "Confirm suggestion" : "Choose column"} />
                       </SelectTrigger>
                       <SelectContent className="bg-popover">
                         {standardColumns.map((col) => (

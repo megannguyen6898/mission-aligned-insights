@@ -1,6 +1,8 @@
 from __future__ import annotations
+from __future__ import annotations
 
-from datetime import date, timedelta
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -12,23 +14,30 @@ service = AnalyticsService()
 
 
 @router.get("/kpis")
-def get_kpis(org_id: str, range: str = "last_90d", db: Session = Depends(get_db)):
-    start: date | None = None
-    if range == "last_90d":
-        start = date.today() - timedelta(days=90)
-    elif range not in ("all", ""):
-        raise HTTPException(status_code=400, detail="Unsupported range")
-    return service.kpis(db, org_id, start)
+def get_kpis(
+    space_id: str = Query(..., description="Identifier for the organization/space"),
+    db: Session = Depends(get_db),
+):
+    try:
+        return service.get_kpis(db, space_id)
+    except ValueError as exc:  # pragma: no cover - defensive
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/series")
 def get_series(
-    metric: str,
-    org_id: str,
-    from_: date = Query(..., alias="from"),
-    to: date = Query(...),
+    space_id: str = Query(..., description="Identifier for the organization/space"),
+    metric: str = Query("beneficiaries", description="Comma-separated metric keys"),
+    group_by: Optional[str] = Query(
+        "year", description="One of year, region, program"
+    ),
+    time_range: Optional[str] = Query(
+        None, description="Optional range formatted as YYYY..YYYY"
+    ),
     db: Session = Depends(get_db),
 ):
-    if metric != "activities_by_month":
-        raise HTTPException(status_code=400, detail="Unsupported metric")
-    return service.activity_series(db, org_id, from_, to)
+    metrics = [m.strip() for m in metric.split(",") if m.strip()]
+    try:
+        return service.get_series(db, space_id, metrics, group_by, time_range)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
