@@ -1,5 +1,6 @@
 // src/pages/auth/Login.tsx
 import React from "react";
+import type { AxiosError } from "axios";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -18,6 +19,17 @@ const loginSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 type LoginFormData = z.infer<typeof loginSchema>;
+
+const fromAxiosError = (error: unknown): string => {
+  if (!error) return "Login failed";
+  if (typeof error === "string") return error;
+  const axiosError = error as AxiosError<{ detail?: string }>;
+  return (
+    axiosError.response?.data?.detail ??
+    axiosError.message ??
+    "Login failed"
+  );
+};
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -49,98 +61,115 @@ const Login: React.FC = () => {
         /* non-fatal */
       }
 
-      // 4) Go straight to dashboard
-      navigate("/dashboard", { replace: true });
-    } catch (err: any) {
-      const msg =
-        err?.response?.data?.detail ??
-        (typeof err?.response?.data === "string" ? err.response.data : err?.message) ??
-        "Login failed";
+      // 4) Begin workflow at Upload step
+      navigate("/upload", { replace: true });
+    } catch (err: unknown) {
+      const msg = fromAxiosError(err);
       form.setError("root", { type: "server", message: msg });
-      console.error("Login error:", err?.response?.status, msg);
+      if (typeof err === "object" && err !== null) {
+        console.error("Login error:", (err as AxiosError).response?.status, msg);
+      } else {
+        console.error("Login error:", msg);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-mega-dark">Welcome back</h2>
-          <p className="mt-2 text-sm text-gray-600">Sign in to your ImpactView account</p>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Sign In</CardTitle>
-            <CardDescription>Enter your email and password to access your dashboard</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" aria-busy={loading}>
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          inputMode="email"
-                          autoComplete="email"
-                          placeholder="you@example.com"
-                          disabled={loading}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="password"
-                          autoComplete="current-password"
-                          placeholder="Enter your password"
-                          disabled={loading}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Root/server error (from API) */}
-                {form.formState.errors.root?.message && (
-                  <p className="text-sm text-red-600">{form.formState.errors.root.message}</p>
-                )}
-
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Signing in..." : "Sign In"}
-                </Button>
-              </form>
-            </Form>
-
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Don't have an account?{" "}
-                <Link to="/signup" className="font-medium text-mega-primary hover:text-mega-primary/80">
-                  Sign up
-                </Link>
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/10">
+      <div className="mx-auto flex min-h-screen max-w-5xl items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid w-full gap-10 rounded-3xl border border-border/60 bg-card/90 p-10 shadow-2xl sm:grid-cols-[1.1fr_1fr]">
+          <div className="hidden flex-col justify-between rounded-2xl border border-primary/20 bg-primary/10 p-8 text-primary sm:flex">
+            <div className="space-y-4">
+              <p className="text-sm font-semibold uppercase tracking-wide text-primary/80">
+                ImpactView
+              </p>
+              <h2 className="text-3xl font-semibold leading-snug text-primary">
+                Welcome back.
+              </h2>
+              <p className="text-sm leading-relaxed text-primary/80">
+                Sign in to review fresh KPI cards, confirm mappings, and share reports with stakeholders.
               </p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="rounded-2xl border border-primary/20 bg-background/80 p-4 text-xs text-primary/80">
+              Encrypted sessions, SOC2-ready, lineage preserved end to end.
+            </div>
+          </div>
+
+          <Card className="soft-shadow border-border/60">
+            <CardHeader className="space-y-2 text-left">
+              <CardTitle className="text-2xl font-semibold text-foreground">Sign in</CardTitle>
+              <CardDescription className="text-sm text-muted-foreground">
+                Enter your email and password to access the impact workspace.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" aria-busy={loading}>
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            inputMode="email"
+                            autoComplete="email"
+                            placeholder="you@example.com"
+                            disabled={loading}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            autoComplete="current-password"
+                            placeholder="Enter your password"
+                            disabled={loading}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Root/server error (from API) */}
+                  {form.formState.errors.root?.message && (
+                    <p className="text-sm text-red-600">{form.formState.errors.root.message}</p>
+                  )}
+
+                  <Button type="submit" className="w-full rounded-full bg-primary py-5" disabled={loading}>
+                    {loading ? "Signing in..." : "Sign In"}
+                  </Button>
+                </form>
+              </Form>
+
+              <div className="mt-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Don't have an account?{" "}
+                  <Link to="/signup" className="font-medium text-primary hover:text-primary/80">
+                    Sign up
+                  </Link>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

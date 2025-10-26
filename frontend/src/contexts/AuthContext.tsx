@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import type { AxiosError } from 'axios';
 import { User, AuthContextType, RegisterRequest } from '../types/auth.types';
 import { authService } from '../services/auth.service';
 import { useToast } from '@/hooks/use-toast';
@@ -62,11 +63,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         title: 'Login successful',
         description: `Welcome back, ${userData.name}!`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login failed:', error);
       toast({
         title: 'Login failed',
-        description: error.response?.data?.detail || 'Please check your credentials',
+        description: extractErrorDetail(error),
         variant: 'destructive',
       });
       throw error;
@@ -87,11 +88,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         title: 'Registration successful',
         description: 'Welcome to ImpactView!',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Registration failed:', error);
       toast({
         title: 'Registration failed',
-        description: error.response?.data?.detail || 'Please try again',
+        description: extractErrorDetail(error),
         variant: 'destructive',
       });
       throw error;
@@ -123,4 +124,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
+};
+const extractErrorDetail = (error: unknown): string => {
+  if (!error) return 'Please try again';
+  if (typeof error === 'string') return error;
+  const axiosError = error as AxiosError<{ detail?: string }>;
+  return axiosError.response?.data?.detail ?? axiosError.message ?? 'Please try again';
 };

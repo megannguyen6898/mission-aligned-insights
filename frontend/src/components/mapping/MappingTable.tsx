@@ -34,11 +34,11 @@ export const MappingTable: React.FC<MappingTableProps> = ({
 
   const getConfidenceBadge = (confidence: number) => {
     if (confidence >= 0.8) {
-      return <Badge variant="default" className="bg-primary">High</Badge>;
+      return <Badge variant="secondary" className="rounded-full border border-primary/30 bg-primary/15 text-primary">High</Badge>;
     } else if (confidence >= 0.5) {
-      return <Badge variant="secondary" className="bg-accent text-accent-foreground">Medium</Badge>;
+      return <Badge variant="secondary" className="rounded-full border border-accent/40 bg-accent/20 text-foreground">Medium</Badge>;
     }
-    return <Badge variant="outline" className="border-destructive/50 text-destructive">Low</Badge>;
+    return <Badge variant="outline" className="rounded-full border border-destructive/40 text-destructive">Low</Badge>;
   };
 
   return (
@@ -54,41 +54,41 @@ export const MappingTable: React.FC<MappingTableProps> = ({
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Mapping Table */}
-        <div className="rounded-xl border border-border overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-muted/50 border-b border-border">
-              <tr>
-                <th className="text-left text-sm font-medium text-foreground px-4 py-3">
+        <div className="overflow-hidden rounded-2xl border border-border/60">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-muted-foreground">
+              <tr className="uppercase tracking-wide text-[11px]">
+                <th className="px-4 py-3 text-left font-semibold">
                   Your Column
                 </th>
-                <th className="text-left text-sm font-medium text-foreground px-4 py-3">
+                <th className="px-4 py-3 text-left font-semibold">
                   Maps To
                 </th>
-                <th className="text-left text-sm font-medium text-foreground px-4 py-3">
+                <th className="px-4 py-3 text-left font-semibold">
                   Confidence
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody>
               {mappings.map((mapping, idx) => (
                 <tr
                   key={idx}
                   className={cn(
-                    'hover:bg-accent/50 transition-colors',
+                    'transition-colors hover:bg-accent/40',
                     idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'
                   )}
                 >
-                  <td className="px-4 py-3 text-sm font-medium text-foreground">
+                  <td className="px-4 py-4 text-sm font-medium text-foreground">
                     {mapping.sourceColumn}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-4">
                     <Select
                       value={mapping.currentMapping || mapping.suggestedMapping}
                       onValueChange={(value) =>
                         onMappingChange?.(mapping.sourceColumn, value)
                       }
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full rounded-xl border-border/60">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-popover">
@@ -100,7 +100,7 @@ export const MappingTable: React.FC<MappingTableProps> = ({
                       </SelectContent>
                     </Select>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-4">
                     {getConfidenceBadge(mapping.confidence)}
                   </td>
                 </tr>

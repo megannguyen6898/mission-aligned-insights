@@ -13,6 +13,7 @@ import Signup from "./pages/auth/Signup";
 import Onboarding from "./pages/auth/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Upload from "./pages/Upload";
+import Mapping from "./pages/Mapping";
 import Reports from "./pages/Reports";
 import Investors from "./pages/Investors";
 import Settings from "./pages/Settings";
@@ -43,6 +44,7 @@ const App = () => (
             }>
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="upload" element={<Upload />} />
+              <Route path="mapping" element={<Mapping />} />
               <Route path="reports" element={<Reports />} />
               <Route path="investors" element={<Investors />} />
               <Route path="settings" element={<Settings />} />

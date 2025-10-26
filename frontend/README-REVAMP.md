@@ -3,12 +3,16 @@
 ## Overview
 This redesign implements a cohesive design system focused on social impact, using cyan (#06B6D4) and amber (#FBBF24) as primary brand colors with slate neutrals.
 
-## Running the Project
+## Run & Test
 
 ```bash
 cd frontend
 npm install
 npm run dev
+# open http://localhost:8080
+
+# optional smoke tests
+npm run test
 ```
 
 ## Design Tokens
@@ -24,20 +28,22 @@ npm run dev
 - **Line Height**: Generous (1.75 for relaxed reading)
 - **Weights**: Regular (400) and Semibold (600)
 
-### Spacing & Layout
-- **Border Radius**: 1rem (16px) base, up to 2xl for cards
-- **Shadows**: Soft, subtle elevation (soft-shadow, soft-shadow-lg)
-- **Whitespace**: Generous padding and gaps (p-6, p-8, space-y-6)
+### Radii, Shadows & Spacing
+- **Border Radius**: `--radius: 1rem` (rounded-xl/2xl cards)
+- **Shadows**: `--shadow-soft`, `--shadow-medium` for subtle elevation
+- **Whitespace**: space-y-6/8, p-6/8, responsive gaps in `PageHeader`
 
 ## Reusable Components
 
 ### Layout
 - **AppShell** (`/components/layout/AppShell.tsx`): Main layout with collapsible sidebar
-- **WorkflowNav** (`/components/sidebar/WorkflowNav.tsx`): Navigation with Upload → Mapping → Dashboard → Reports → Settings
+- **PageHeader** (`/components/layout/PageHeader.tsx`): Consistent heading + actions bar
+- **WorkflowNav** (`/components/sidebar/WorkflowNav.tsx`): Navigation with Upload → Mapping → Dashboard → Reports → Settings + Spaces tree
 
 ### Common Components
-- **KpiCard** (`/components/common/KpiCard.tsx`): Large numeral cards with trends
-- **ChartBlock** (`/components/common/ChartBlock.tsx`): Chart containers with optional AI narratives
+- **KpiCard** (`/components/common/KpiCard.tsx`): Large numerals, soft gradient, trend chip
+- **ChartBlock** (`/components/charts/ChartBlock.tsx`): Rounded-2xl chart container with subtle gridlines
+- **AINarrativeCard** (`/components/dashboard/AINarrativeCard.tsx`): Gradient AI summary card with Sparkles icon
 
 ### Feature Components
 - **UploadPanel** (`/components/upload/UploadPanel.tsx`): Drag-drop file upload with progress
@@ -53,13 +59,14 @@ npm run dev
 4. **Accessible**: WCAG AA contrast, visible focus states
 5. **Semantic Tokens**: All colors via CSS variables, never hardcoded
 
-## CSS Utilities
+## CSS Utilities & Variables
 
-```css
-.soft-shadow         /* Subtle card elevation */
-.soft-shadow-lg      /* More prominent shadow */
-.gradient-ai         /* AI narrative gradient background */
-```
+`/src/index.css` defines CSS variables that Tailwind consumes:
+
+- `--primary`, `--accent`, `--muted`, `--shadow-soft`, `--shadow-medium`
+- `.soft-shadow`, `.soft-shadow-lg`, `.gradient-ai`, `.card-surface`
+
+Use these utilities instead of inline hex values to keep themable.
 
 ## Accessibility
 - WCAG AA contrast ratios on all text
@@ -67,9 +74,18 @@ npm run dev
 - Keyboard navigation support
 - Semantic HTML structure
 
+## Smoke Tests
+
+Minimal Vitest smoke tests live in `/src/__tests__/`:
+- `mapping.test.tsx` toggles advanced mapping preview
+- `dashboard.test.tsx` verifies KPI + AI narrative render
+
+Add more tests as features firm up; keep them UI-level and resilience-focused.
+
 ## Next Steps
 - [x] Implement Spaces tree component for navigating organizations → programs → datasets
 - [x] Add File Preview drawer with quick metadata and text previews
-- [x] Connect AI drawer to the mission-aligned AI service endpoint
+- [x] Connect Ask AI drawer to `/api/v1/ai/ask`
 - [x] Add responsive mobile and tablet layouts for the application shell
-- Continue collecting feedback from program teams to refine data taxonomy and AI prompts
+- [x] Establish smoke tests for dashboard + mapping flows
+- Continue collecting feedback from programme teams to refine data taxonomy and AI prompts

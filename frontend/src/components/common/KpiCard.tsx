@@ -34,23 +34,35 @@ export const KpiCard: React.FC<KpiCardProps> = ({
     : 'text-muted-foreground';
 
   return (
-    <Card className={cn('soft-shadow-lg border-border/50', className)}>
-      <CardContent className="p-6 space-y-2">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          {icon && <div className="text-muted-foreground">{icon}</div>}
-        </div>
-        <div className="space-y-1">
-          <p className="text-4xl font-semibold tracking-tight text-foreground">
-            {value}
-          </p>
-          {trend && (
-            <div className={cn('flex items-center gap-1 text-sm', trendColor)}>
-              <TrendIcon className="h-4 w-4" />
-              <span className="font-medium">{trend.value}</span>
+    <Card
+      className={cn(
+        'rounded-2xl border border-border/60 bg-card/95 soft-shadow',
+        'bg-[radial-gradient(circle_at_top,_rgba(6,182,212,0.08),_transparent_70%)]',
+        className
+      )}
+    >
+      <CardContent className="space-y-4 p-6">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground/80">
+              {title}
+            </p>
+            <p className="mt-2 text-4xl font-semibold tracking-tight text-foreground sm:text-[2.75rem]">
+              {value}
+            </p>
+          </div>
+          {icon && (
+            <div className="rounded-2xl border border-primary/20 bg-primary/10 p-2 text-primary">
+              {icon}
             </div>
           )}
         </div>
+        {trend && (
+          <div className={cn('flex items-center gap-1 text-xs font-semibold uppercase tracking-wide', trendColor)}>
+            <TrendIcon className="h-4 w-4" />
+            <span>{trend.value}</span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

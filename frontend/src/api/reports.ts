@@ -4,7 +4,7 @@ export function listReportTemplates() {
   return api.get("/report-templates");
 }
 
-export function createReport(templateId: number, params?: Record<string, any>) {
+export function createReport(templateId: number, params?: Record<string, unknown>) {
   return api.post("/reports", { template_id: templateId, params });
 }
 

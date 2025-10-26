@@ -15,7 +15,7 @@ export interface ChartData {
 
 export interface DashboardConfig {
   topics: string[];
-  filters: Record<string, any>;
+  filters: Record<string, unknown>;
   dateRange?: {
     start: string;
     end: string;

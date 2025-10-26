@@ -5,9 +5,17 @@ import { Upload as UploadIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 
+type JobState = "pending" | "processing" | "success" | "failed";
+
+interface JobErrorDetail {
+  sheet?: string;
+  missing?: string[];
+  error?: unknown;
+}
+
 interface JobStatus {
-  status: string;
-  error?: any;
+  status: JobState;
+  error?: JobErrorDetail | string | null;
 }
 
 const POLL_INTERVAL_MS = 2000;
@@ -32,20 +40,30 @@ const UploadWidget: React.FC = () => {
             const err = res.data.error;
             const parsed: Record<string, string[]> = {};
             if (err) {
-              let detail: any = err;
-              if (typeof err.error === "string") {
+              let detail: JobErrorDetail | string = err;
+              if (typeof err === "string") {
                 try {
-                  detail = JSON.parse(err.error);
+                  const maybeObject = JSON.parse(err) as JobErrorDetail;
+                  detail = maybeObject;
                 } catch {
                   detail = err;
                 }
+              } else if (typeof err === "object" && err !== null && typeof (err as { error?: unknown }).error === "string") {
+                try {
+                  detail = JSON.parse((err as { error?: string }).error ?? "");
+                } catch {
+                  detail = err as JobErrorDetail;
+                }
               }
-              if (detail.sheet && Array.isArray(detail.missing)) {
-                parsed[detail.sheet] = detail.missing;
-              } else if (detail.sheet && detail.error) {
-                parsed[detail.sheet] = [String(detail.error)];
-              } else if (detail.error) {
-                parsed["General"] = [String(detail.error)];
+              if (typeof detail === "object" && detail !== null) {
+                const sheet = detail.sheet ?? "General";
+                if (Array.isArray(detail.missing) && detail.missing.length > 0) {
+                  parsed[sheet] = detail.missing;
+                } else if (detail.error) {
+                  parsed[sheet] = [String(detail.error)];
+                }
+              } else {
+                parsed["General"] = [String(detail)];
               }
             }
             setSheetErrors(parsed);
@@ -142,4 +160,3 @@ const UploadWidget: React.FC = () => {
 };
 
 export default UploadWidget;
-
