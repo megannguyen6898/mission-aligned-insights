@@ -1,112 +1,85 @@
-# Welcome to your project
+# Mission Aligned Insights
 
-## Project info
+End-to-end MVP that ingests `.xlsx` data, validates and ingests it into Postgres, generates Plotly dashboards, and produces AI-narrated PDF reports using an entirely local stack (FastAPI · Postgres · Redis/RQ · MinIO · Ollama · WeasyPrint · Nginx).
 
-**URL**: https://lovable.dev/projects/7ae67eef-a24f-4b2d-abfe-1c7967d70a19
-
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/7ae67eef-a24f-4b2d-abfe-1c7967d70a19) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Quick start
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# 1. Copy environment template and customise if needed
+cp .env.example .env
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 2. Build and launch the full stack
+docker compose up -d --build
 
-# Step 3: Install the necessary dependencies.
-cd frontend
-npm install
+# 3. Pull the local model once (runs inside the Ollama container)
+docker compose exec ollama ollama pull llama3.1:8b-instruct
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+# 4. Open the experience
+# - API docs:       http://localhost:8080/docs
+# - Frontend dev:   http://localhost:3000
+# - Nginx gateway:  http://localhost:8081
 ```
 
-**Edit a file directly in GitHub**
+To stop everything:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```sh
+docker compose down
+```
 
-**Use GitHub Codespaces**
+## Stack overview
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- **FastAPI** backend (`backend/`) with SQLAlchemy + Alembic migrations.
+- **Postgres**, **Redis**, **MinIO**, **Ollama**, **Nginx** orchestrated via Docker Compose.
+- **RQ** workers (Redis queue) for validation and ingestion jobs.
+- **Plotly** dashboards (server-side specs) rendered in React via `react-plotly.js`.
+- **WeasyPrint** HTML → PDF pipeline storing artefacts in MinIO with presigned URLs.
+- **Ollama** serving `llama3.1:8b-instruct` for on-device analytics copilot.
 
-## What technologies are used for this project?
+## Running backend & worker outside Compose (optional)
 
-This project is built with:
+```sh
+# prerequisites: Postgres, Redis, MinIO, Ollama already running
+cd backend
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8080
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# start RQ worker in another shell
+python -m app.worker
+```
 
-## How can I deploy this project?
+## Frontend development
 
-Simply open [Lovable](https://lovable.dev/projects/7ae67eef-a24f-4b2d-abfe-1c7967d70a19) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
-
-# What I have done to connect backend to frontend?
-# Running the project
-
-### Frontend
 ```sh
 cd frontend
-npm install
-npm run dev
+npm install        # run once (updates package-lock.json)
+npm run dev        # Vite dev server on http://localhost:3000
 ```
 
-### Backend
+## Manual acceptance checklist
+
+1. Upload an `.xlsx` (≤10 MB) → Upload step shows **Complete**.
+2. Validation auto-runs → schema + preview appear in Upload sidebar.
+3. Click **Start ingest** → ingest step transitions to **Complete**.
+4. On Dashboard, click **Generate dashboards** → KPI, category, and time-trend Plotly charts render.
+5. Ask AI “Which regions are most efficient?” → response arrives as bullets in ≤12 s.
+6. Click **Generate report** → download the narrated PDF (≥10 KB) with charts + appendix.
+7. Hit `GET /healthz` → `database`, `redis`, `storage`, `ai` all return `true`.
+
+## Testing
 
 ```sh
 cd backend
-# Option A: run with Docker Compose
-docker-compose up --build # If image hasn't been built
-# Option B: run directly with Uvicorn
-uvicorn app.main:app --reload
+pytest
 ```
 
-### Manual E2E test
+The MVP test suite exercises presign + validation + ingestion flow (with mocked MinIO/Ollama), dashboard generation, AI responses, PDF report creation, and `/healthz` readiness.
 
-1. Start backend services: `docker-compose up` (from repository root).
-2. Run the frontend dev server:
-   ```sh
-   cd frontend
-   npm install
-   npm run dev
-   ```
-3. Sign up and log in through the app.
-4. Navigate to **Upload** and choose an Excel file. The UI will show statuses for upload, validate, and ingest.
-5. After ingestion, open **Dashboard**. A list of dashboards loads and the selected one is embedded via Metabase.
-6. Open **Reports**, choose a template, generate a report, wait for status `ready`, then download the file.
+## Notes
 
-## Security
+- All third-party services run locally; no paid APIs are required.
+- MinIO buckets and objects are private—public access is granted only via presigned URLs.
+- Nginx is configured with `client_max_body_size 30m` to support multi-megabyte uploads.
+- To reset the workspace, remove the Postgres/MinIO Docker volumes: `docker compose down -v` (destructive).
 
 See [SECURITY.md](SECURITY.md) for details on encryption, authentication, audit logging, and data retention.

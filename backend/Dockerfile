@@ -1,8 +1,19 @@
 FROM python:3.11
 
-# 1) Install curl only (needed for Docker healthcheck)
+# 1) Install system dependencies (curl for healthcheck + WeasyPrint stack)
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends curl \
+  && apt-get install -y --no-install-recommends \
+    curl \
+    libcairo2 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libffi-dev \
+    libxml2 \
+    libxslt1.1 \
+    fonts-liberation \
+    shared-mime-info \
+    libjpeg62-turbo \
   && rm -rf /var/lib/apt/lists/*
 
 # 2) Set env vars

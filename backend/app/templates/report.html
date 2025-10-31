@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Impact Report</title>
+    <style>
+        body { font-family: "Liberation Sans", Arial, sans-serif; margin: 0; padding: 0; color: #1f2937; }
+        header { padding: 48px 64px; background: {{ branding.primary_color or "#111827" }}; color: #fff; }
+        header h1 { margin: 0; font-size: 32px; }
+        header p { margin-top: 8px; font-size: 16px; }
+        .logo { max-height: 56px; margin-bottom: 24px; }
+        main { padding: 48px 64px; }
+        h2 { margin-top: 48px; font-size: 24px; color: #111827; }
+        h3 { margin-top: 32px; font-size: 20px; color: #1f2937; }
+        table { width: 100%; border-collapse: collapse; margin-top: 24px; }
+        th, td { border: 1px solid #d1d5db; padding: 12px 16px; text-align: left; }
+        th { background: #f3f4f6; }
+        .chart { margin-top: 32px; }
+        .chart img { width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 8px; }
+        .narrative { margin-top: 24px; line-height: 1.6; }
+        footer { margin-top: 64px; font-size: 12px; color: #6b7280; text-align: center; }
+    </style>
+</head>
+<body>
+    <header>
+        {% if branding.logo_url %}
+            <img src="{{ branding.logo_url }}" alt="Logo" class="logo" />
+        {% endif %}
+        <h1>Impact Intelligence Report</h1>
+        <p>Workspace: {{ dataset.workspace_id or "Shared" }} &nbsp;|&nbsp; Dataset ID: {{ dataset.id }}</p>
+    </header>
+    <main>
+        <section>
+            <h2>Executive summary</h2>
+            {% if narratives %}
+                {% for block in narratives %}
+                    <div class="narrative">
+                        {% if block.heading %}<h3>{{ block.heading }}</h3>{% endif %}
+                        {% if block.body %}<p>{{ block.body }}</p>{% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No narrative blocks were provided.</p>
+            {% endif %}
+        </section>
+
+        <section>
+            <h2>Key performance indicators</h2>
+            {% if kpi_rows %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Total</th>
+                            <th>Average</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in kpi_rows %}
+                            <tr>
+                                <td>{{ row.label }}</td>
+                                <td>{{ row.total }}</td>
+                                <td>{{ row.average }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>Numeric metrics were not detected in this dataset.</p>
+            {% endif %}
+        </section>
+
+        <section>
+            <h2>Dashboards</h2>
+            {% if chart_blocks %}
+                {% for chart in chart_blocks %}
+                    <div class="chart">
+                        <h3>{{ chart.title }}</h3>
+                        <img src="data:image/png;base64,{{ chart.image }}" alt="{{ chart.title }}" />
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No charts were generated for this dataset.</p>
+            {% endif %}
+        </section>
+
+        <section>
+            <h2>Appendix: dataset schema</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Semantic type</th>
+                        <th>Missing ratio</th>
+                        <th>Sample values</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for column in dataset.schema or [] %}
+                        <tr>
+                            <td>{{ column.name }}</td>
+                            <td>{{ column.semantic_type or column.dtype }}</td>
+                            <td>{{ '%.2f'|format(column.missing_ratio * 100 if column.missing_ratio else 0) }}%</td>
+                            <td>{{ ', '.join(column.sample_values or []) }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </main>
+    <footer>
+        Generated with mission-aligned insights — {{ dataset.id }}
+    </footer>
+</body>
+</html>

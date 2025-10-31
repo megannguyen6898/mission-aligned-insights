@@ -7,6 +7,7 @@ interface AINarrativeCardProps {
   title?: string;
   narrative: string;
   highlights?: string[];
+  bullets?: string[];
   onRegenerate?: () => void;
 }
 
@@ -14,6 +15,7 @@ export const AINarrativeCard: React.FC<AINarrativeCardProps> = ({
   title = 'AI narrative',
   narrative,
   highlights,
+  bullets,
   onRegenerate,
 }) => {
   return (
@@ -42,7 +44,16 @@ export const AINarrativeCard: React.FC<AINarrativeCardProps> = ({
         )}
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-sm leading-relaxed text-primary/90">{narrative}</p>
+        <div className="space-y-3 text-sm leading-relaxed text-primary/90">
+          {narrative && <p>{narrative}</p>}
+          {bullets && bullets.length > 0 && (
+            <ul className="list-disc space-y-1 pl-5">
+              {bullets.map((item, idx) => (
+                <li key={idx}>{item}</li>
+              ))}
+            </ul>
+          )}
+        </div>
         {highlights?.length ? (
           <div className="flex flex-wrap gap-2">
             {highlights.map((highlight) => (

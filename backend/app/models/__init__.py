@@ -26,3 +26,7 @@ from .staging import (
     StgBeneficiary,
 )
 from .activity_outcome_fact import ActivityOutcomeFact
+from .workspace import Workspace, WorkspaceMember
+from .workflow import Workflow, WorkflowStep, WorkflowState
+from .dataset import Dataset
+from .ai_event import AIEvent

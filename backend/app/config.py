@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     )
 
     # ===== ENV FIELDS (UPPERCASE to match .env) =====
+    # App
+    APP_ENV: str = Field("dev", alias="APP_ENV")
+    APP_PORT: int = Field(8080, alias="APP_PORT")
+
     # Database
     DATABASE_URL: str = Field(..., alias="DATABASE_URL")
     DATABASE_SSL_MODE: str = Field("prefer", alias="DATABASE_SSL_MODE")
@@ -48,15 +52,27 @@ class Settings(BaseSettings):
     # Redis / Celery
     REDIS_URL: str = Field("redis://redis:6379/0", alias="REDIS_URL")
     WORKER_CONCURRENCY: int = Field(2, alias="WORKER_CONCURRENCY")
+    PUBLIC_UPLOAD_MAX_MB: int = Field(10, alias="PUBLIC_UPLOAD_MAX_MB")
+    SERVER_UPLOAD_MAX_MB: int = Field(25, alias="SERVER_UPLOAD_MAX_MB")
 
     # Storage (MinIO / S3)
     STORAGE_PROVIDER: Optional[str] = Field(None, alias="STORAGE_PROVIDER")
+    STORAGE_BUCKET: Optional[str] = Field(None, alias="STORAGE_BUCKET")
+    STORAGE_ENDPOINT: Optional[str] = Field(None, alias="STORAGE_ENDPOINT")
+    STORAGE_ACCESS_KEY: Optional[str] = Field(None, alias="STORAGE_ACCESS_KEY")
+    STORAGE_SECRET_KEY: Optional[str] = Field(None, alias="STORAGE_SECRET_KEY")
+    STORAGE_REGION: Optional[str] = Field(None, alias="STORAGE_REGION")
     S3_BUCKET: Optional[str] = Field(None, alias="S3_BUCKET")
     S3_UPLOAD_PREFIX: Optional[str] = Field(None, alias="S3_UPLOAD_PREFIX")
     S3_REGION: Optional[str] = Field(None, alias="S3_REGION")
     S3_ENDPOINT_URL: Optional[str] = Field(None, alias="S3_ENDPOINT_URL")
     S3_ACCESS_KEY_ID: Optional[str] = Field(None, alias="S3_ACCESS_KEY_ID")
     S3_SECRET_ACCESS_KEY: Optional[str] = Field(None, alias="S3_SECRET_ACCESS_KEY")
+
+    # AI
+    USE_LOCAL_MODEL: bool = Field(True, alias="USE_LOCAL_MODEL")
+    MODEL_NAME: str = Field("llama3.1:8b-instruct", alias="MODEL_NAME")
+    OLLAMA_ENDPOINT: Optional[str] = Field(None, alias="OLLAMA_ENDPOINT")
 
     # CORS
     ALLOWED_ORIGINS: str = Field(
@@ -147,10 +163,26 @@ class Settings(BaseSettings):
     def worker_concurrency(self) -> int:
         return self.WORKER_CONCURRENCY
 
+    @property
+    def public_upload_max_mb(self) -> int:
+        return self.PUBLIC_UPLOAD_MAX_MB
+
+    @property
+    def server_upload_max_mb(self) -> int:
+        return self.SERVER_UPLOAD_MAX_MB
+
     # Storage
     @property
     def storage_provider(self) -> Optional[str]:
         return self.STORAGE_PROVIDER
+
+    @property
+    def storage_bucket(self) -> Optional[str]:
+        return self.STORAGE_BUCKET or self.S3_BUCKET
+
+    @property
+    def storage_endpoint(self) -> Optional[str]:
+        return self.STORAGE_ENDPOINT or self.S3_ENDPOINT_URL
 
     @property
     def s3_bucket(self) -> Optional[str]:
@@ -176,9 +208,34 @@ class Settings(BaseSettings):
     def s3_secret_access_key(self) -> Optional[str]:
         return self.S3_SECRET_ACCESS_KEY
 
+    @property
+    def storage_access_key(self) -> Optional[str]:
+        return self.STORAGE_ACCESS_KEY or self.S3_ACCESS_KEY_ID
+
+    @property
+    def storage_secret_key(self) -> Optional[str]:
+        return self.STORAGE_SECRET_KEY or self.S3_SECRET_ACCESS_KEY
+
+    @property
+    def storage_region(self) -> Optional[str]:
+        return self.STORAGE_REGION or self.S3_REGION
+
     # CORS
     @property
     def cors_origins(self) -> List[str]:
         return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
+
+    # AI
+    @property
+    def use_local_model(self) -> bool:
+        return self.USE_LOCAL_MODEL
+
+    @property
+    def model_name(self) -> str:
+        return self.MODEL_NAME
+
+    @property
+    def ollama_endpoint(self) -> Optional[str]:
+        return self.OLLAMA_ENDPOINT
 
 settings = Settings()

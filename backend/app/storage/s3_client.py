@@ -1,29 +1,32 @@
-import os
+from __future__ import annotations
+
+from ..config import settings
 
 try:
     import boto3  # type: ignore
-except ImportError:  # pragma: no cover - fallback for environments without boto3
-    boto3 = None
+    from botocore.client import Config  # type: ignore
+except ImportError as exc:  # pragma: no cover - defensive fallback
+    raise RuntimeError("boto3 is required for storage operations") from exc
 
 
 def get_s3_client():
     """Create an S3 client configured for AWS S3 or MinIO."""
-    provider = os.environ.get("STORAGE_PROVIDER", "s3").lower()
-    region = os.environ.get("S3_REGION")
-    endpoint_url = os.environ.get("S3_ENDPOINT_URL")
-
-    if boto3 is None:
-        class _DummyClient:
-            def generate_presigned_post(self, Bucket, Key, Fields, Conditions, ExpiresIn):
-                url = endpoint_url or f"https://{Bucket}.s3.amazonaws.com/{Key}"
-                return {"url": url, "fields": Fields}
-
-        return _DummyClient()
+    endpoint_url = settings.storage_endpoint
+    region = settings.storage_region
+    access_key = settings.storage_access_key
+    secret_key = settings.storage_secret_key
+    provider = (settings.storage_provider or "s3").lower()
 
     kwargs = {}
+    if endpoint_url:
+        kwargs["endpoint_url"] = endpoint_url
     if region:
         kwargs["region_name"] = region
-    if provider == "minio" and endpoint_url:
-        kwargs["endpoint_url"] = endpoint_url
+    if access_key and secret_key:
+        kwargs["aws_access_key_id"] = access_key
+        kwargs["aws_secret_access_key"] = secret_key
+
+    if provider == "minio":
+        kwargs["config"] = Config(signature_version="s3v4")
 
     return boto3.client("s3", **kwargs)

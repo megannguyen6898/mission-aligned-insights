@@ -1,6 +1,7 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
+import createPlotlyComponent from "react-plotly.js/factory";
+import * as Plotly from "plotly.js-dist-min";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
 import {
   ResponsiveContainer,
   LineChart,
@@ -17,13 +18,23 @@ import {
   Cell,
 } from "recharts";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { KpiCard } from "@/components/common/KpiCard";
 import { AINarrativeCard } from "@/components/dashboard/AINarrativeCard";
 import { ChartBlock } from "@/components/charts/ChartBlock";
 import { getKpis, getSeries, Kpi, Series } from "@/lib/apiClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { Download, FileBarChart } from "lucide-react";
+import { Download, FileBarChart, Sparkles } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import {
+  askAI,
+  generateDashboards,
+  generateReport,
+  type DashboardChart,
+} from "@/api/mvp";
+
+const Plot = createPlotlyComponent(Plotly as any);
 
 const palette = ["#06B6D4", "#FBBF24", "#0EA5E9", "#22D3EE", "#64748B", "#34D399"];
 
@@ -98,7 +109,18 @@ const transformSeries = (series?: Series[]) => {
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const spaceId = user?.organization_name || "org1";
+  const workspaceId = user?.id ?? 1;
+  const [datasetId, setDatasetId] = useState<string | null>(() => sessionStorage.getItem("latest_dataset_id"));
+  const [charts, setCharts] = useState<DashboardChart[]>([]);
+  const [isGeneratingCharts, setIsGeneratingCharts] = useState(false);
+  const [aiQuestion, setAiQuestion] = useState("Which regions are most efficient?");
+  const [aiNarrative, setAiNarrative] = useState("Upload data to unlock AI guidance.");
+  const [aiBullets, setAiBullets] = useState<string[]>([]);
+  const [isAskingAI, setIsAskingAI] = useState(false);
+  const [reportUrl, setReportUrl] = useState<string | null>(null);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   const { data: kpiData } = useQuery({
     queryKey: ["analytics", "kpis", spaceId],
@@ -131,22 +153,121 @@ const Dashboard: React.FC = () => {
     }));
   }, [regionSeriesData]);
 
+  const handleGenerateDashboards = async () => {
+    if (!datasetId) {
+      toast({
+        title: "Dataset not ready",
+        description: "Upload and ingest a dataset first.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsGeneratingCharts(true);
+    try {
+      const result = await generateDashboards(datasetId);
+      setCharts(result.charts);
+      toast({ title: "Dashboards ready", description: "Charts generated from your dataset." });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Dashboards failed",
+        description: "Could not generate dashboards right now.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingCharts(false);
+    }
+  };
+
+  const handleAskAI = async () => {
+    if (!datasetId) {
+      toast({
+        title: "Dataset not ready",
+        description: "Upload and ingest a dataset first.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsAskingAI(true);
+    try {
+      const result = await askAI(workspaceId, datasetId, aiQuestion);
+      const lines = result.answer
+        .split(/\n+/)
+        .map((line) => line.replace(/^[-*•]\s*/, "").trim())
+        .filter(Boolean);
+      setAiNarrative(lines[0] ?? result.answer);
+      setAiBullets(lines.length > 1 ? lines : []);
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "AI unavailable",
+        description: "The local model did not respond in time.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAskingAI(false);
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    if (!datasetId) {
+      toast({
+        title: "Dataset not ready",
+        description: "Upload and ingest a dataset first.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsGeneratingReport(true);
+    try {
+      const result = await generateReport({
+        datasetId,
+        selectedChartIds: charts.map((chart) => chart.id),
+        narrativeBlocks: aiBullets.map((body) => ({ body })),
+      });
+      setReportUrl(result.download_url);
+      toast({ title: "Report ready", description: "Download your narrated PDF." });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Report failed",
+        description: "Could not render the report.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
   return (
     <div className="space-y-10">
       <PageHeader
         title="Impact intelligence"
-        description="Review dynamic KPIs, AI-ready narratives, and ready-to-export insights—all powered by first-party analytics."
+        description={`Review dynamic KPIs, AI-ready narratives, and ready-to-export insights—all powered by first-party analytics. Dataset: ${
+          datasetId ? datasetId.slice(0, 8) : "pending"
+        }`}
         actions={
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" className="rounded-full border-primary/40 text-primary">
-              <Download className="mr-2 h-4 w-4" />
-              Export CSV
+            <Button variant="outline" size="sm" className="rounded-full border-primary/40 text-primary" onClick={handleGenerateDashboards} disabled={isGeneratingCharts}>
+              <Sparkles className="mr-2 h-4 w-4" />
+              {isGeneratingCharts ? "Generating" : "Generate dashboards"}
             </Button>
-            <Button size="sm" className="rounded-full bg-primary px-5" asChild>
-              <Link to="/reports">
-                <FileBarChart className="mr-2 h-4 w-4" /> Generate report
-              </Link>
+            <Button
+              size="sm"
+              className="rounded-full bg-primary px-5"
+              onClick={handleGenerateReport}
+              disabled={isGeneratingReport}
+            >
+              <FileBarChart className="mr-2 h-4 w-4" />
+              {isGeneratingReport ? "Rendering" : "Generate report"}
             </Button>
+            {reportUrl && (
+              <Button asChild variant="ghost" size="sm" className="rounded-full">
+                <a href={reportUrl} target="_blank" rel="noopener noreferrer">
+                  <Download className="mr-2 h-4 w-4" /> Download PDF
+                </a>
+              </Button>
+            )}
           </div>
         }
       />
@@ -171,7 +292,24 @@ const Dashboard: React.FC = () => {
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-8">
-          <AINarrativeCard narrative={narrative} highlights={kpis.slice(0, 3).map((kpi) => `${kpi.label}: ${formatKpiValue(kpi)}`)} />
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Input
+                value={aiQuestion}
+                onChange={(event) => setAiQuestion(event.target.value)}
+                placeholder="Ask the AI about your dataset"
+              />
+              <Button size="sm" onClick={handleAskAI} disabled={isAskingAI}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                {isAskingAI ? "Thinking" : "Ask AI"}
+              </Button>
+            </div>
+            <AINarrativeCard
+              narrative={aiNarrative}
+              bullets={aiBullets}
+              highlights={kpis.slice(0, 3).map((kpi) => `${kpi.label}: ${formatKpiValue(kpi)}`)}
+            />
+          </div>
 
           <ChartBlock
             title="Impact over time"
@@ -241,6 +379,22 @@ const Dashboard: React.FC = () => {
           </ChartBlock>
         </div>
       </div>
+
+      {charts.length > 0 && (
+        <div className="grid gap-6 md:grid-cols-2">
+          {charts.map((chart) => (
+            <ChartBlock key={chart.id} title={chart.title} description="Auto-generated from your dataset">
+              <Plot
+                data={(chart.spec.data as any[]) ?? []}
+                layout={{ height: 360, autosize: true, ...(chart.spec.layout as Record<string, unknown>) }}
+                useResizeHandler
+                style={{ width: "100%", height: "100%" }}
+                config={{ displayModeBar: false }}
+              />
+            </ChartBlock>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

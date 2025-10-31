@@ -21,6 +21,15 @@ from .routes.metrics.recompute import router as metrics_recompute_router
 from .routes.reports import router as reports_generate_router
 from .routes.audit import router as audit_router
 from .routes.analytics import router as analytics_router
+from .routes.mvp import (
+    uploads as mvp_uploads_router,
+    workflows as mvp_workflows_router,
+    datasets as mvp_datasets_router,
+    dashboards as mvp_dashboards_router,
+    ai as mvp_ai_router,
+    reports as mvp_reports_router,
+    health as mvp_health_router,
+)
 
 app = FastAPI(
     title="ImpactView API",
@@ -55,6 +64,13 @@ app.include_router(metrics_recompute_router)
 app.include_router(reports_generate_router)
 app.include_router(audit_router, prefix="/api/v1")
 app.include_router(analytics_router)
+app.include_router(mvp_uploads_router.router)
+app.include_router(mvp_workflows_router.router)
+app.include_router(mvp_datasets_router.router)
+app.include_router(mvp_dashboards_router.router)
+app.include_router(mvp_ai_router.router)
+app.include_router(mvp_reports_router.router)
+app.include_router(mvp_health_router.router)
 
 @app.get("/")
 async def root():

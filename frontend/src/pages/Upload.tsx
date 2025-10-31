@@ -1,13 +1,22 @@
-import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
 import { UploadPanel } from "@/components/upload/UploadPanel";
 import { useToast } from "@/hooks/use-toast";
-import { uploadFile, validateUpload, ingestUpload } from "@/api/uploads";
+import type { AxiosError } from "axios";
+import {
+  completeUpload,
+  getUploadWorkflow,
+  presignUpload,
+  triggerIngest,
+  uploadToPresignedUrl,
+  type WorkflowSummary,
+} from "@/api/mvp";
 import { FilePreviewDrawer } from "@/components/upload/FilePreviewDrawer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ListChecks, Lock, ShieldCheck, Sparkles } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Step {
   name: string;
@@ -28,10 +37,53 @@ const Upload: React.FC = () => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [steps, setSteps] = useState<Step[]>(initialSteps);
   const [errors, setErrors] = useState<string[]>([]);
-  const navigate = useNavigate();
+  const [uploadId, setUploadId] = useState<number | null>(null);
+  const [datasetId, setDatasetId] = useState<string | null>(null);
+  const [workflow, setWorkflow] = useState<WorkflowSummary | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const completedCount = useMemo(() => steps.filter((s) => s.status === "done").length, [steps]);
+
+  const mapStateToStepStatus = (state?: string): Step["status"] => {
+    switch (state) {
+      case "succeeded":
+        return "done";
+      case "running":
+      case "queued":
+        return "pending";
+      case "failed":
+        return "error";
+      default:
+        return "idle";
+    }
+  };
+
+  const updateStepsFromWorkflow = (summary: WorkflowSummary | null) => {
+    setSteps((prev) =>
+      prev.map((step) => {
+        switch (step.name) {
+          case "Upload":
+            return { ...step, status: summary ? mapStateToStepStatus(summary.upload.state) : step.status };
+          case "Validate":
+            return { ...step, status: summary ? mapStateToStepStatus(summary.validate.state) : step.status };
+          case "Ingest":
+            return { ...step, status: summary ? mapStateToStepStatus(summary.ingest.state) : step.status };
+          default:
+            return step;
+        }
+      })
+    );
+  };
+
+  const extractErrorDetail = (error: unknown): string => {
+    const axiosError = error as AxiosError<{ code?: string; message?: string }>;
+    const detail = axiosError.response?.data;
+    if (detail?.message) {
+      return detail.message;
+    }
+    return axiosError.message || "Please try again";
+  };
 
   const handleFileUpload = async (file: File) => {
     setIsUploading(true);
@@ -41,41 +93,96 @@ const Upload: React.FC = () => {
       )
     );
     setErrors([]);
+    setWorkflow(null);
+    setDatasetId(null);
+    setUploadId(null);
 
     try {
-      const { data } = await uploadFile(file);
+      const workspaceId = user?.id ?? 1;
+      const presign = await presignUpload({
+        workspaceId,
+        filename: file.name,
+        mimeType: file.type || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        sizeBytes: file.size,
+      });
+
+      await uploadToPresignedUrl(presign.url, file, presign.headers);
+
+      setUploadId(presign.upload_id);
+      setUploadedFiles((prev) => [...prev, file]);
       setSteps((prev) => prev.map((step, idx) => (idx === 0 ? { ...step, status: "done" } : step)));
 
-      const validation = await validateUpload(data.upload_id);
-      if (validation.data.errors && validation.data.errors.length > 0) {
-        setSteps((prev) =>
-          prev.map((step, idx) =>
-            idx === 1 ? { ...step, status: "error" } : step
-          )
-        );
-        setErrors(validation.data.errors);
-        return;
-      }
-      setSteps((prev) =>
-        prev.map((step, idx) => (idx === 1 ? { ...step, status: "done" } : step))
-      );
+      const summary = await completeUpload(presign.upload_id);
+      setWorkflow(summary);
+      updateStepsFromWorkflow(summary);
+      const nextDatasetId = summary.validate.dataset_id ?? summary.ingest.dataset_id ?? null;
+      setDatasetId(nextDatasetId ?? null);
 
-      await ingestUpload(data.upload_id);
-      setSteps((prev) =>
-        prev.map((step, idx) => (idx === 2 ? { ...step, status: "done" } : step))
-      );
-      setUploadedFiles((prev) => [...prev, file]);
-      toast({ title: "Upload complete", description: file.name });
-      navigate("/mapping");
+      toast({ title: "Upload received", description: "Validation queued." });
     } catch (error) {
       console.error(error);
       toast({
         title: "Upload failed",
-        description: "Please try again",
+        description: extractErrorDetail(error),
         variant: "destructive",
       });
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!uploadId) {
+      return;
+    }
+
+    let isMounted = true;
+    const interval = setInterval(async () => {
+      try {
+        const summary = await getUploadWorkflow(uploadId);
+        if (!isMounted) return;
+        setWorkflow(summary);
+        updateStepsFromWorkflow(summary);
+        const newErrors = [] as string[];
+        if (summary.validate.error) newErrors.push(summary.validate.error);
+        if (summary.ingest.error) newErrors.push(summary.ingest.error);
+        setErrors(newErrors);
+        const nextDatasetId = summary.validate.dataset_id ?? summary.ingest.dataset_id ?? null;
+        if (nextDatasetId) {
+          setDatasetId(nextDatasetId);
+        }
+        if (summary.ingest.state === "succeeded") {
+          toast({ title: "Ingest complete", description: "Dataset ready for dashboards." });
+          clearInterval(interval);
+        }
+      } catch (error) {
+        console.error("Workflow poll failed", error);
+      }
+    }, 2000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [uploadId]);
+
+  useEffect(() => {
+    if (datasetId) {
+      sessionStorage.setItem("latest_dataset_id", datasetId);
+    }
+  }, [datasetId]);
+
+  const handleIngest = async () => {
+    if (!datasetId) return;
+    try {
+      await triggerIngest(datasetId);
+      toast({ title: "Ingest started", description: "We are loading your dataset." });
+    } catch (error) {
+      toast({
+        title: "Ingest failed",
+        description: extractErrorDetail(error),
+        variant: "destructive",
+      });
     }
   };
 
@@ -110,6 +217,11 @@ const Upload: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {datasetId && workflow && ["queued", "failed"].includes(workflow.ingest.state) && (
+                <Button size="sm" className="w-full" onClick={handleIngest}>
+                  Start ingest
+                </Button>
+              )}
               <ul className="space-y-3">
                 {steps.map((step) => (
                   <li key={step.name} className="rounded-xl border border-border/40 bg-background/70 px-4 py-3">
