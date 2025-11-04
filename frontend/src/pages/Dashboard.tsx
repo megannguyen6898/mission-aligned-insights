@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import createPlotlyComponent from "react-plotly.js/factory";
 import * as Plotly from "plotly.js-dist-min";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   ResponsiveContainer,
   LineChart,
@@ -23,6 +23,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { KpiCard } from "@/components/common/KpiCard";
 import { AINarrativeCard } from "@/components/dashboard/AINarrativeCard";
 import { ChartBlock } from "@/components/charts/ChartBlock";
+import { SDGGoalTile } from "@/components/dashboard/SDGGoalTile";
 import { getKpis, getSeries, Kpi, Series } from "@/lib/apiClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { Download, FileBarChart, Sparkles } from "lucide-react";
@@ -33,6 +34,11 @@ import {
   generateReport,
   type DashboardChart,
 } from "@/api/mvp";
+import {
+  fetchAnalysisResults,
+  fetchSDGSuggestions,
+  runImpactAnalysis,
+} from "@/api/metrics";
 
 const Plot = createPlotlyComponent(Plotly as any);
 
@@ -140,6 +146,48 @@ const Dashboard: React.FC = () => {
     enabled: Boolean(spaceId),
   });
 
+  const [analysisVariables, setAnalysisVariables] = useState<string>("impact_score,spend");
+
+  const { data: sdgSummary } = useQuery({
+    queryKey: ["dashboard", "sdg", datasetId],
+    queryFn: () => fetchSDGSuggestions(datasetId ?? ""),
+    enabled: Boolean(datasetId),
+  });
+
+  const {
+    data: correlationData,
+    refetch: refetchCorrelations,
+  } = useQuery({
+    queryKey: ["dashboard", "analysis", datasetId],
+    queryFn: () => fetchAnalysisResults(datasetId ?? ""),
+    enabled: Boolean(datasetId),
+  });
+
+  const runAnalysisMutation = useMutation({
+    mutationFn: () =>
+      runImpactAnalysis(
+        datasetId ?? "",
+        analysisVariables
+          .split(",")
+          .map((value) => value.trim())
+          .filter(Boolean),
+      ),
+    onSuccess() {
+      toast({
+        title: "Analysis queued",
+        description: "Correlation job submitted. Refresh shortly for new insights.",
+      });
+      refetchCorrelations();
+    },
+    onError(error: Error) {
+      toast({
+        title: "Unable to run analysis",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const kpis = useMemo(() => kpiData?.kpis ?? [], [kpiData]);
   const narrative = useMemo(() => buildNarrative(kpis), [kpis]);
   const { data: lineData, keys: lineKeys } = useMemo(() => transformSeries(timeSeriesData?.series), [timeSeriesData]);
@@ -152,6 +200,17 @@ const Dashboard: React.FC = () => {
       color: palette[idx % palette.length],
     }));
   }, [regionSeriesData]);
+  const sdgGoals = sdgSummary?.goals ?? [];
+  const correlations = correlationData?.results ?? [];
+  const heatmapCells = useMemo(
+    () =>
+      sdgGoals.map((goal) => ({
+        label: `Goal ${goal.goal_number}`,
+        value: Math.round((goal.score ?? 0) * 100),
+        color: goal.goal_color ?? "#0ea5e9",
+      })),
+    [sdgGoals],
+  );
 
   const handleGenerateDashboards = async () => {
     if (!datasetId) {
@@ -379,6 +438,59 @@ const Dashboard: React.FC = () => {
           </ChartBlock>
         </div>
       </div>
+
+      {datasetId && (
+        <div className="space-y-6">
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">SDG intelligence</h2>
+              <p className="text-sm text-muted-foreground">
+                Review AI-selected SDG targets and refresh correlations to test hypotheses.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Input
+                value={analysisVariables}
+                onChange={(event) => setAnalysisVariables(event.target.value)}
+                placeholder="impact_score,spend"
+                className="sm:w-72"
+              />
+              <Button size="sm" onClick={() => runAnalysisMutation.mutate()} disabled={runAnalysisMutation.isPending}>
+                {runAnalysisMutation.isPending ? "Running…" : "Run correlations"}
+              </Button>
+            </div>
+          </div>
+
+          {sdgGoals.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Confirm metric mappings to unlock SDG analytics.</p>
+          ) : (
+            <>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {heatmapCells.map((cell) => (
+                  <div key={cell.label} className="rounded-xl border border-border/40 bg-muted/30 p-4">
+                    <p className="text-xs text-muted-foreground">{cell.label}</p>
+                    <p className="text-2xl font-semibold" style={{ color: cell.color }}>
+                      {cell.value}%
+                    </p>
+                    <p className="text-xs text-muted-foreground">Alignment confidence</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid gap-5 lg:grid-cols-2">
+                {sdgGoals.map((goal) => (
+                  <SDGGoalTile
+                    key={goal.goal_id}
+                    goal={goal}
+                    correlations={correlations}
+                    narrative={`Goal ${goal.goal_number} shows strongest lift across ${goal.targets.length} target(s). Continue enriching metrics to deepen analytics.`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {charts.length > 0 && (
         <div className="grid gap-6 md:grid-cols-2">

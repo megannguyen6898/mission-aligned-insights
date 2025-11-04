@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import List, Optional
 from redis import Redis
 from rq import Queue
 from rq.exceptions import NoSuchJobError  # pragma: no cover - imported for API completeness
@@ -10,21 +10,17 @@ from rq.retry import Retry
 
 from .config import settings
 from .database import SessionLocal
-from .models import (
-    Dataset,
-    Upload,
-    UploadStatus,
-    Workflow,
-    WorkflowState,
-)
+from .models import Dataset, Upload, UploadStatus, Workflow, WorkflowState
 from .storage.s3_client import get_s3_client
 from .services.ingest import write_dataframe
 from .services.validation import ValidationResult, analyse_workbook
+from .services.analytics import ImpactAnalyticsService
 
 logger = logging.getLogger(__name__)
 
 redis_conn = Redis.from_url(settings.redis_url)
 queue = Queue("default", connection=redis_conn)
+analytics_service = ImpactAnalyticsService()
 
 
 def enqueue_validation(upload_id: int, workflow_id: str) -> Job:
@@ -45,6 +41,20 @@ def enqueue_ingest(dataset_id: str, workflow_id: str) -> Job:
         retry=Retry(max=2, interval=[5, 15]),
         job_timeout=900,
     )
+
+
+def enqueue_analysis_job(dataset_id: str, independent_variables: List[str]) -> Optional[Job]:
+    try:
+        return queue.enqueue(
+            "app.jobs.run_dataset_analysis",
+            dataset_id,
+            independent_variables,
+            retry=Retry(max=1, interval=[15]),
+            job_timeout=900,
+        )
+    except Exception:  # pragma: no cover - fallback in tests without Redis
+        logger.exception("Failed to enqueue analysis job, running inline")
+        return None
 
 
 def _load_upload_bytes(upload: Upload) -> bytes:
@@ -187,5 +197,16 @@ def ingest_dataset(dataset_id: str, workflow_id: str) -> None:
             workflow.progress = 100
             session.commit()
         raise
+    finally:
+        session.close()
+
+
+def run_dataset_analysis(dataset_id: str, independent_variables: List[str]) -> None:
+    session = SessionLocal()
+    try:
+        dataset = session.get(Dataset, dataset_id)
+        if not dataset:
+            raise ValueError(f"Dataset {dataset_id} not found")
+        analytics_service.run_correlations(session, dataset, independent_variables or [])
     finally:
         session.close()

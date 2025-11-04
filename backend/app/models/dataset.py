@@ -24,3 +24,6 @@ class Dataset(Base):
     upload = relationship("Upload", back_populates="dataset")
     workflows = relationship("Workflow", back_populates="dataset")
     ai_events = relationship("AIEvent", back_populates="dataset")
+    metric_mappings = relationship("MetricMapping", back_populates="dataset", cascade="all, delete-orphan")
+    correlations = relationship("CorrelationResult", back_populates="dataset", cascade="all, delete-orphan")
+    balance_entries = relationship("ImpactBalanceSheet", back_populates="dataset", cascade="all, delete-orphan")

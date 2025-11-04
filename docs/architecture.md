@@ -42,18 +42,21 @@
 3. **Ingestion** – When triggered, the worker normalises the workbook into a canonical Postgres table and updates workflow state + dataset metadata.
 4. **Dashboards** – FastAPI derives Plotly JSON specs from dataset metadata and/or table data. React consumes these specs via `react-plotly.js`.
 5. **AI Copilot** – FastAPI summarises schema + aggregates and calls the Ollama `llama3.1:8b-instruct` model (local HTTP API). Responses are stored as `ai_events` for auditing.
-6. **Reporting** – A WeasyPrint HTML template renders KPI tables, Plotly charts (converted to PNG via Kaleido), AI narratives, and schema appendix. The PDF is stored in MinIO and a presigned GET URL is returned.
-7. **Edge** – Nginx proxies `localhost:8081` → FastAPI (`8080`), bumping `client_max_body_size` to 30 MB for uploads.
+6. **Impact intelligence** – Confirmed metric mappings unlock SDG alignment (`sdg_*` tables) and correlation analytics persisted in the `correlations` table via the RQ worker.
+7. **Reporting** – A WeasyPrint HTML template renders KPI tables, Plotly charts (converted to PNG via Kaleido), AI narratives, SDG summaries, and correlation tables. The PDF is stored in MinIO and a presigned GET URL is returned.
+8. **Edge** – Nginx proxies `localhost:8081` → FastAPI (`8080`), bumping `client_max_body_size` to 30 MB for uploads.
 
 ## Key modules
 
-- `backend/app/routes/mvp/` – REST endpoints for uploads, workflows, datasets, dashboards, AI, reports, and health.
-- `backend/app/jobs.py` – RQ job definitions (`validate_upload`, `ingest_dataset`).
-- `backend/app/services/` – Validation heuristics, ingestion helpers, dashboard generation, AI integration, and report rendering.
+- `backend/app/routes/mvp/` – REST endpoints for uploads, workflows, datasets, dashboards, AI, reports, health, SDG insights, benchmarks, and analytics.
+- `backend/app/jobs.py` – RQ job definitions (`validate_upload`, `ingest_dataset`, `run_dataset_analysis`).
+- `backend/app/services/` – Validation heuristics, ingestion helpers, dashboard generation, AI integration, metric/SDG services, correlation analytics, and report rendering.
 - `backend/app/storage/presign.py` – MinIO client helpers for presigned PUT/GET URLs and bucket CORS management.
 - `frontend/src/api/mvp.ts` – Typed API client for MVP endpoints (presign, workflows, dashboards, AI, reports).
+- `frontend/src/api/metrics.ts` – Typed client for metric mapping, SDG insights, correlations, and benchmarks.
 - `frontend/src/pages/Upload.tsx` – Upload flow with workflow polling + ingest trigger.
-- `frontend/src/pages/Dashboard.tsx` – Plotly chart rendering, AI Q&A, and PDF generation controls.
+- `frontend/src/pages/Dashboard.tsx` – Plotly chart rendering, SDG heatmap, correlations, AI Q&A, and PDF generation controls.
+- `frontend/src/pages/MetricMapping.tsx` / `SDGDashboard.tsx` – Dedicated UI for metric mapping and SDG goal exploration.
 
 ## Environments & services
 

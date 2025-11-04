@@ -4,7 +4,7 @@ from redis import Redis
 from rq import Connection, Worker
 
 from .config import settings
-from .jobs import ingest_dataset, validate_upload  # noqa: F401 - imported for worker discovery
+from .jobs import ingest_dataset, validate_upload, run_dataset_analysis  # noqa: F401 - imported for worker discovery
 
 QUEUES = ["default"]
 

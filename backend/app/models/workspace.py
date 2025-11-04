@@ -21,6 +21,7 @@ class Workspace(Base):
     datasets = relationship("Dataset", back_populates="workspace")
     members = relationship("WorkspaceMember", back_populates="workspace", cascade="all, delete-orphan")
     ai_events = relationship("AIEvent", back_populates="workspace")
+    metrics = relationship("Metric", back_populates="workspace", cascade="all, delete-orphan")
 
 
 class WorkspaceRole(str, enum.Enum):

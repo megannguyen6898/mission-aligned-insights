@@ -35,6 +35,15 @@ docker compose down
 - **WeasyPrint** HTML → PDF pipeline storing artefacts in MinIO with presigned URLs.
 - **Ollama** serving `llama3.1:8b-instruct` for on-device analytics copilot.
 
+## Impact Intelligence Layer
+
+- **Metric library & mapping** – curate reusable metrics (`metrics.is_library = true`) and guide users through AI-assisted column mapping (`/datasets/{id}/metrics/suggest`, `/datasets/{id}/metrics/confirm`).
+- **SDG knowledge graph** – seed UN SDG goals/targets/indicators (`python -m ops.seed_sdg`) and surface relevance scores via `/datasets/{id}/sdg/suggest`.
+- **Correlation analytics** – queue or inline-run metric correlations (`/datasets/{id}/analysis/run`) and fetch persisted results (`/datasets/{id}/analysis/results`).
+- **Benchmarks API** – query sector benchmarks with `/benchmarks/{sector}` (backed by `benchmark_projects`).
+- **Reporting upgrades** – generated PDFs include SDG alignment tables, correlation insights, and extended narrative scaffolding.
+
+
 ## Running backend & worker outside Compose (optional)
 
 ```sh

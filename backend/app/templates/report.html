@@ -85,6 +85,72 @@
         </section>
 
         <section>
+            <h2>SDG alignment summary</h2>
+            {% if sdg_summary.goals %}
+                {% for goal in sdg_summary.goals %}
+                    <div class="chart">
+                        <h3 style="color: {{ goal.goal_color or '#111827' }};">
+                            Goal {{ goal.goal_number }} — {{ goal.goal_title }} (score {{ '%.2f'|format(goal.score * 100) }}%)
+                        </h3>
+                        {% for target in goal.targets %}
+                            <div style="margin-left: 16px; margin-top: 12px;">
+                                <strong>Target {{ target.target_code }}:</strong> {{ target.target_title }}
+                                <ul>
+                                    {% for indicator in target.indicators %}
+                                        <li>
+                                            Indicator {{ indicator.indicator_code }} — {{ indicator.indicator_title }}
+                                            (metric {{ indicator.metric_id }}, column "{{ indicator.dataset_column }}", score {{ '%.2f'|format(indicator.score * 100) }}%)
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No SDG alignment suggestions were available.</p>
+            {% endif %}
+        </section>
+
+        <section>
+            <h2>Correlation insights</h2>
+            {% if correlations %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Metric ID</th>
+                            <th>Independent Variable</th>
+                            <th>r value</th>
+                            <th>Direction</th>
+                            <th>Confidence</th>
+                            <th>SDG Indicator</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in correlations %}
+                            <tr>
+                                <td>{{ row.metric_id }}</td>
+                                <td>{{ row.independent_variable }}</td>
+                                <td>{{ '%.3f'|format(row.r_value) }}</td>
+                                <td>{{ row.direction }}</td>
+                                <td>{{ '%.0f'|format(row.confidence * 100) }}%</td>
+                                <td>
+                                    {% if row.sdg_indicator_id %}
+                                        {{ row.sdg_indicator_id }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No correlations met the confidence threshold for this dataset.</p>
+            {% endif %}
+        </section>
+
+        <section>
             <h2>Appendix: dataset schema</h2>
             <table>
                 <thead>

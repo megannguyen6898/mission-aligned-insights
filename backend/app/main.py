@@ -29,6 +29,7 @@ from .routes.mvp import (
     ai as mvp_ai_router,
     reports as mvp_reports_router,
     health as mvp_health_router,
+    benchmarks as mvp_benchmarks_router,
 )
 
 app = FastAPI(
@@ -71,6 +72,7 @@ app.include_router(mvp_dashboards_router.router)
 app.include_router(mvp_ai_router.router)
 app.include_router(mvp_reports_router.router)
 app.include_router(mvp_health_router.router)
+app.include_router(mvp_benchmarks_router.router)
 
 @app.get("/")
 async def root():

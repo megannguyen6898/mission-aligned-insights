@@ -14,11 +14,14 @@ import Onboarding from "./pages/auth/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Upload from "./pages/Upload";
 import Mapping from "./pages/Mapping";
+import MetricMapping from "./pages/MetricMapping";
+import SDGDashboard from "./pages/SDGDashboard";
 import Reports from "./pages/Reports";
 import Investors from "./pages/Investors";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import UploadPage from "./pages/ingest/UploadPage";
+import ImpactBalanceSheetTab from "./pages/ImpactBalanceSheetTab";
 
 const queryClient = new QueryClient();
 
@@ -45,7 +48,10 @@ const App = () => (
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="upload" element={<Upload />} />
               <Route path="mapping" element={<Mapping />} />
+              <Route path="metric-mapping" element={<MetricMapping />} />
+              <Route path="sdg" element={<SDGDashboard />} />
               <Route path="reports" element={<Reports />} />
+              <Route path="impact-balance" element={<ImpactBalanceSheetTab />} />
               <Route path="investors" element={<Investors />} />
               <Route path="settings" element={<Settings />} />
               <Route path="ingest/upload" element={<UploadPage />} />

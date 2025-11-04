@@ -40,6 +40,8 @@ def build_report_html(
     charts: List[Dict[str, object]],
     narratives: List[Dict[str, Optional[str]]],
     branding: Optional[Dict[str, str]],
+    sdg_summary: Optional[Dict[str, object]] = None,
+    correlations: Optional[List[Dict[str, object]]] = None,
 ) -> str:
     template = env.get_template("report.html")
     data_frame = load_dataset_frame(dataset, limit=1000)
@@ -72,6 +74,8 @@ def build_report_html(
         chart_blocks=chart_blocks,
         narratives=narratives,
         branding=branding or {},
+        sdg_summary=sdg_summary or {},
+        correlations=correlations or [],
     )
 
 
@@ -80,8 +84,17 @@ def generate_report(
     charts: List[Dict[str, object]],
     narratives: List[Dict[str, Optional[str]]],
     branding: Optional[Dict[str, str]] = None,
+    sdg_summary: Optional[Dict[str, object]] = None,
+    correlations: Optional[List[Dict[str, object]]] = None,
 ) -> Dict[str, str]:
-    html_content = build_report_html(dataset, charts, narratives, branding)
+    html_content = build_report_html(
+        dataset,
+        charts,
+        narratives,
+        branding,
+        sdg_summary=sdg_summary,
+        correlations=correlations,
+    )
     pdf_bytes = HTML(string=html_content).write_pdf()
 
     report_id = str(uuid.uuid4())

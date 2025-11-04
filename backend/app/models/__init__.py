@@ -6,7 +6,6 @@ from .report import Report, ReportTemplate, ReportJob
 from .project import Project
 from .activity import Activity
 from .outcome import Outcome
-from .metric import Metric
 from .funding_resource import FundingResource
 from .beneficiary import Beneficiary
 from .project_summary import ProjectSummary
@@ -30,3 +29,8 @@ from .workspace import Workspace, WorkspaceMember
 from .workflow import Workflow, WorkflowStep, WorkflowState
 from .dataset import Dataset
 from .ai_event import AIEvent
+from .metric import Metric, MetricMapping
+from .sdg import SDGGoal, SDGTarget, SDGIndicator, MetricSDGMapping
+from .correlation import CorrelationResult
+from .benchmark import BenchmarkProject
+from .impact_balance_sheet import ImpactBalanceSheet
